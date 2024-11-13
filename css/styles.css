@@ -1,3 +1,26 @@
 body {
     background-image: url("download.jpeg");
   }
+
+.navbar-content > li > a {
+  font-family: "Poppins", sans-serif;
+  text-decoration: none;
+  font-weight: 600;
+  color: #1E1E1E;
+  font-size: 20px;
+}
+
+.kopi-logo {
+  height: 90px;
+  width: 128px;
+}
+
+.search-logo {
+  height: 40px;
+  width: 40px;
+}
+
+.cart-logo {
+  height: 54px;
+  width: 54px;
+}
