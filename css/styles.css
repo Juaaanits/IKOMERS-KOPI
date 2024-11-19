@@ -1,10 +1,14 @@
 body {
-    background-image: url("download.jpeg");
-  }
+  background-image: url(/download.jpeg);
+  background-size: 95%;
+  font-family: "Poppins", sans-serif;
+}
+
+a {
+  text-decoration: none;
+}
 
 .navbar-content > li > a {
-  font-family: "Poppins", sans-serif;
-  text-decoration: none;
   font-weight: 600;
   color: #1E1E1E;
   font-size: 20px;
@@ -23,4 +27,58 @@ body {
 .cart-logo {
   height: 54px;
   width: 54px;
+}
+
+main {
+  display: flex;
+  justify-content: center;
+}
+
+.body-content-container {
+  display: flex;
+  flex-direction: column;
+  width: 75%;
+  margin-top: 10%;
+  gap: 5px;
+  position: relative;
+  right: 50px;
+}
+
+.body-content-container > * {
+  color: #FFFFFF;
+}
+
+.body-content-container > h1 {
+  font-size: 3rem;
+}
+
+.b-p-container {
+  width: 45%;
+}
+
+.lAndR-container {
+  margin-top: 70px;
+  display: flex;
+  gap: 50px;
+  width: 30%;
+}
+
+.plr {
+  position: relative;
+  left: 6px;
+}
+
+.lAndR-container > div {
+  background-color: #FAF6E3;
+  width: 132px;
+  height: 46px;
+  border-radius: 50px;
+  text-align: center;
+  align-content: center;
+}
+
+.lAndR-container > div > a {
+  color: #1E1E1E;
+  font-size: 20px;
+  font-weight: bold;
 }
