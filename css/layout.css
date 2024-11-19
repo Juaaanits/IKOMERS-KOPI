@@ -8,7 +8,6 @@
     justify-content: center;
     width: 100%;
     background-color: #FAF6E3;
-    
 }
 
 .navbar-container {
@@ -31,6 +30,17 @@
 }
 
 .searchAndCart-container {
-    gap: 20px;
     align-content: center;
+}
+
+.searchAndCart-container > a {
+    display: inline-block;
+}
+
+.search-logo {
+    margin-bottom: 5px;
+}
+
+.cart-logo {
+    margin-left: 20px;
 }
