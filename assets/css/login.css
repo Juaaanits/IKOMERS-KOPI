@@ -145,6 +145,48 @@ main::before {
     box-shadow: 0 0 0 4px rgba(242, 184, 123, 0.25);
 }
 
+.password-wrapper {
+    position: relative;
+}
+
+.password-wrapper input {
+    padding-right: 3rem;
+}
+
+.eye-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.3rem;
+    height: 2.3rem;
+    padding: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    border-radius: 999px;
+    transition: color 0.2s ease;
+}
+
+.eye-btn:hover,
+.eye-btn:focus {
+    color: var(--text-primary);
+}
+
+.eye-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.eye-btn svg {
+    width: 1.35rem;
+    height: 1.35rem;
+}
+
 .remember-details {
     display: flex;
     justify-content: space-between;

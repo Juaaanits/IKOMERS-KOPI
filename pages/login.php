@@ -88,8 +88,17 @@ if ($conn && $conn instanceof mysqli) {
                 </div>
                 <div class="input-details">
                     <label for="password" class="visually-hidden">Password</label>
-                    <input type="password" id="password" name="password" placeholder="Password" required>
+                    <div class="password-wrapper">
+                        <input type="password" id="password" name="password" placeholder="Password" required>
+                        <button type="button" id="togglePassword" class="eye-btn" aria-label="Show password" aria-pressed="false">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                                <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
+
                 <div class="remember-details">
                     <label><input type="checkbox" name="remember" value="1"> Remember me</label>
                     <a href="#">Forgot password?</a>
@@ -105,5 +114,7 @@ if ($conn && $conn instanceof mysqli) {
         </div>
     </section>
 </main>
+<script src="../assets/js/script.js"></script>
 </body>
 </html>
+
