@@ -1,8 +1,7 @@
 <?php
-// db_connect.php
 $host = "localhost";
 $user = "root";
-$pass = ""; // XAMPP default has no password
+$pass = ""; 
 $dbname = "ikomers_db";
 
 // Create connection
