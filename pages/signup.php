@@ -112,7 +112,7 @@ if ($conn && $conn instanceof mysqli) {
                         placeholder="Create a password"
                         required
                     >
-                    <button type="button" id="togglePassword" class="eye-btn" aria-label="Show password" aria-pressed="false">
+                    <button type="button" id="togglePassword" class="eye-btn1" aria-label="Show password" aria-pressed="false">
                         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                             <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -123,6 +123,7 @@ if ($conn && $conn instanceof mysqli) {
 
             <div class="input-details">
                 <label for="confirm_password">Confirm password</label>
+                <div class="password-wrapper">
                 <input
                     type="password"
                     id="confirm_password"
@@ -130,7 +131,14 @@ if ($conn && $conn instanceof mysqli) {
                     placeholder="Re-type your password"
                     required
                 >
-            </div>
+                <button type="button" id="togglePassword" class="eye-btn2" aria-label="Show password" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                            <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                  </div>
+              </div>
 
             <button type="submit" class="btn" name="signup-btn">Create account</button>
         </form>
@@ -139,6 +147,6 @@ if ($conn && $conn instanceof mysqli) {
         </div>
     </div>
 </main>
-<script src="../assets/js/script.js"></script>
+<script src="../assets/js/signup.js"></script>
 </body>
 </html>

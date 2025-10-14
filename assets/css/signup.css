@@ -1,5 +1,16 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
 
+:root {
+    --coffee-brown: #4a2c2a;
+    --coffee-dark: rgba(18, 13, 11, 0.85);
+    --coffee-cream: rgba(255, 255, 255, 0.08);
+    --coffee-border: rgba(255, 255, 255, 0.14);
+    --text-primary: #f8f5f2;
+    --text-muted: rgba(248, 245, 242, 0.7);
+    --accent: #f2b87b;
+    --error: #ff8b7b;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -182,7 +193,7 @@ body {
     padding-right: 3rem;
 }
 
-.eye-btn {
+.eye-btn1 {
     position: absolute;
     right: 12px;
     top: 50%;
@@ -201,17 +212,51 @@ body {
     transition: color 0.2s ease;
 }
 
-.eye-btn:hover,
-.eye-btn:focus {
+.eye-btn1:hover,
+.eye-btn1:focus {
     color: #f8f5f2;
 }
 
-.eye-btn:focus-visible {
+.eye-btn1:focus-visible {
     outline: 2px solid rgba(242, 184, 123, 0.9);
     outline-offset: 2px;
 }
 
-.eye-btn svg {
+.eye-btn1 svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.eye-btn2 {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    padding: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    border-radius: 999px;
+    transition: color 0.2s ease;
+}
+
+.eye-btn2:hover,
+.eye-btn2:focus {
+    color: #f8f5f2;
+}
+
+.eye-btn2:focus-visible {
+    outline: 2px solid rgba(242, 184, 123, 0.9);
+    outline-offset: 2px;
+}
+
+.eye-btn2 svg {
     width: 1.25rem;
     height: 1.25rem;
 }

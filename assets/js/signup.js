@@ -1,10 +1,8 @@
-﻿document.addEventListener('DOMContentLoaded', () => {
-    const passwordInput = document.getElementById('password');
-    const togglePassword = document.getElementById('togglePassword');
-
-    if (!passwordInput || !togglePassword) {
-        return;
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    const fields = [
+        { button: document.querySelector('.eye-btn1'), input: document.getElementById('password') },
+        { button: document.querySelector('.eye-btn2'), input: document.getElementById('confirm_password') }
+    ];
 
     const icons = {
         show: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
@@ -18,18 +16,24 @@
                </svg>`
     };
 
-    const updateToggle = (isVisible) => {
-        togglePassword.setAttribute('aria-pressed', String(isVisible));
-        togglePassword.setAttribute('aria-label', isVisible ? 'Hide password' : 'Show password');
-        togglePassword.innerHTML = isVisible ? icons.hide : icons.show;
-    };
+    fields.forEach(({ button, input }) => {
+        if (!button || !input) {
+            return;
+        }
 
-    updateToggle(false);
+        const updateToggle = (isVisible) => {
+            button.setAttribute('aria-pressed', String(isVisible));
+            button.setAttribute('aria-label', isVisible ? 'Hide password' : 'Show password');
+            button.innerHTML = isVisible ? icons.hide : icons.show;
+        };
 
-    togglePassword.addEventListener('click', () => {
-        const showPassword = passwordInput.getAttribute('type') === 'password';
-        passwordInput.setAttribute('type', showPassword ? 'text' : 'password');
-        updateToggle(showPassword);
+        updateToggle(false);
+
+        button.addEventListener('click', (event) => {
+            event.preventDefault();
+            const shouldShow = input.getAttribute('type') === 'password';
+            input.setAttribute('type', shouldShow ? 'text' : 'password');
+            updateToggle(shouldShow);
+        });
     });
 });
-
