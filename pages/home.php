@@ -24,7 +24,7 @@
         </div>
     </nav>
 
-    <main>
+    <main> <!-- Home Page Contents -->
         <section id="welcome-container">
             <div id="welcome-container2">
                 <div id="welcome-info">
@@ -71,6 +71,33 @@
                 </div>
             </div>
         </section>
+
+        <section id="designbox"></section>
+
+        <section id="third-container">
+            <div id="why-choose-us">
+                <div id="why-choose-us-bg">
+                    <img src="../assets/images/person-serving.png" alt="">
+                    <h1>Why Choose Us?</h1>
+                    <p> At iKomers Kopi, we brew every cup with love and freshness. 
+                        Each sip gives you the perfect blend of aroma, flavor, and 
+                        good vibes—just the way coffee should be.</p>   
+                    <form method="" action="" id="wcu-button">
+                        <button type="button" name="">Button3</button>
+                    </form>
+                </div>
+                <div id="why-choose-us-bg2">
+                    <h2>What We Have?</h2>
+                    <h1>We got you a Special Offer!</h1>
+                    <p>Start your day with iKomers Kopi and enjoy your first cup at 10% off! 
+                    Freshly brewed, full of flavor, and made with love—once you taste it, 
+                    you’ll keep coming back for more.</p>
+                    <form method="" action="" id="wcu-button2">
+                        <button type="button" name="">Button4</button>
+                    </form>
+                </div>
+            </div>    
+        </section>   
     </main>
 
 </body>
