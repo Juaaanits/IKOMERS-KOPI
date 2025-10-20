@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login-btn'])) {
             $_SESSION['user_id'] = $userId;
             $_SESSION['username'] = $username;
 
-            header('Location: placeholder.php');
+            header('Location: dashboard.php');
             exit();
         } else {
             $loginResult = $loginResult ?: 'Invalid username or password.';
@@ -124,4 +124,3 @@ if ($conn && $conn instanceof mysqli) {
 <script src="../assets/js/login.js"></script>
 </body>
 </html>
-
