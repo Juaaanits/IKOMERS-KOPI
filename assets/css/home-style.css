@@ -451,6 +451,128 @@ main {
 }
 
 /* ---------------------------------------
+  Visit Us Today/Coffee Menu Slide
+--------------------------------------- */
+#fourth-container{
+  background: linear-gradient(185deg, var(--color-cream-150), var(--color-cream-150) 45%, var(--color-brown-500) 130%);
+  padding: clamp(5rem, 9vw, 6.5rem)0;
+}
+
+#coffee-delights{
+  display: grid;
+  gap: 1.2rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.fourth-panel {
+  position: relative;
+  display: inline-block;
+  padding: clamp(2.5rem, 5vw, 3.5rem);
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.fourth-panel h3 {
+  margin: 0;
+  font-size: clamp(2rem, 3.5vw, 3rem);
+  line-height: 1.1;
+}
+
+ /*Slide*/
+.slide-container {
+  max-width: 1000px;
+  position: relative;
+  margin: auto;
+}
+
+.img-items {
+  display: none;
+}
+
+.prev, .next {
+  cursor: pointer;
+  position: absolute;
+  top: 50%;
+  width: auto;
+  margin-top: -22px;
+  padding: 16px;
+  color: var(--color-white);
+  font-weight: bold;
+  font-size: 18px;
+  transition: 0.6s ease;
+  border-radius: 0 3px 3px 0;
+  user-select: none;
+}
+
+.next {
+  right: 0;
+  border-radius: 3px 0 0 3px;
+}
+
+.prev:hover, .next:hover {
+  background-color: var(--color-brown-700);
+}
+
+.number_slide {
+  color:var(--color-brown-950);
+  font-size: 12px;
+  padding: 10px 15px;
+  position: absolute;
+  background-color: var(--color-brown-300);
+  top: 0;
+}
+
+.dots {
+  text-align: center;
+}
+
+.dot {
+  cursor: pointer;
+  height: 12px;
+  width: 12px;
+  margin: 0 2px;
+  background-color: #1b1109;
+  border-radius: 50%;
+  display: inline-block;
+  transition: background-color 0.6s ease;
+}
+
+.active, .dot:hover{
+  background-color: #b76b2a;
+}
+
+.fade {
+  animation-name: fade;
+  animation-duration: 1.5s;
+}
+
+.img-container{
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.img-items{
+  background: var(--color-white);
+  border-radius: 10px;
+  padding: 10px 10px;
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+  border: 5px solid rgba(45, 26, 14, 0.06);
+}
+
+.img-items img {
+  width: 550px;
+  height: 450px;
+  object-fit: cover;
+}
+
+
+/* ---------------------------------------
    Responsive Tweaks
 --------------------------------------- */
 @media (max-width: 900px) {
@@ -514,4 +636,9 @@ main {
     right: -25%;
     bottom: -15%;
   }
+}
+
+@keyframes fade {
+  from {opacity: .4;}
+  to {opacity: 1;}
 }

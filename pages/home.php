@@ -102,7 +102,55 @@
                 </div>
             </div>
         </section>
+
+        <div id="designbox" aria-hidden="true"></div>
+        
+        <!-- Coffee Delights/Menu Carousel -->
+        <section id="fourth-container">
+            <div class="container">
+                <div class="section-header">
+                    <span class="eyebrow">Coffee Delights</span>
+                    <h2 class="section-title">Choose from the Best Sellers</h2>
+                </div>
+                <div id="coffee-delights">
+                    <article class=fourth-panel>
+                        <span class="eyebrow">highlights</span>
+                        <h3>Coffee Menu</h3>
+                        <p>Enjoy the perfect cup from our coffee menu — from bold Americanos to creamy Lattes, 
+                            each brew is made fresh to keep you energized and inspired. </p>
+                        <a href="#welcome-container" class="button-link button-link--primary">Explore Menu</a>
+                    </article>
+                    <article class="fourth-panel">
+                        <div class="slide-container">
+                            <article class="img-items">
+                                <div class="number_slide">1 / 3</div>
+                                <img src="../assets/images/cold-brew.png" alt="cold brew icon">
+                                <p>Slow-brewed to perfection, our Cold Brew is smooth, bold, and refreshingly cool.</p>
+                            </article>
+                            <article class="img-items">
+                                <div class="number_slide">2 / 3</div>
+                                <img src="../assets/images/iced-americano.png" alt="iced americano icon">
+                                <p>Smooth, balanced, and timeless—our Americano is crafted for those who enjoy a gentle yet deep coffee taste.</p>
+                            </article>
+                            <article class="img-items">
+                                <div class="number_slide">3 / 3</div>
+                                <img src="../assets/images/latte-coffee.png" alt="latte coffee icon">
+                                <p>Creamy, smooth, and perfectly balanced, our latte blends rich espresso with silky steamed milk for a comforting cup of warmth and flavor.</p>
+                            </article>
+                            <a class="prev" onclick="plusSlides(-1)">&#10094</a>
+                            <a class="next" onclick="plusSlides(1)">&#10095</a>
+                            <div class="dots">
+                                <span class="dot" onclick="currentSlide(1)"></span>
+                                <span class="dot" onclick="currentSlide(2)"></span>
+                                <span class="dot" onclick="currentSlide(3)"></span>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
     </main>
+    <script src="../assets/js/slide.js"></script>
 </body>
 
 </html>
