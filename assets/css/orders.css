@@ -31,6 +31,113 @@ h1 {
   border: none;
 }
 
+#add-order:hover {
+  background-color: white;
+  color: black;
+}
+
+#order-form {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: none;
+  border-radius: 10px;
+  width: 40%;
+}
+
+#dialog-order-form {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 10px;
+}
+
+#order-header-container {
+  display: flex;
+  justify-content: center;
+}
+
+#close-order-form {
+  position: relative;
+  left: 30%;
+  height: 30px;
+  background-color: white;
+  border: none;
+}
+
+#close-order-form-button {
+  height: 100%;
+}
+
+#customer-container-input {
+  height: 30px;
+}
+
+.customer {
+  padding: 8px;
+}
+
+#search-customer {
+  border: none;
+}
+
+#search-customer-img {
+  height: 100%;
+}
+
+#id-number {
+  /* padding: 8px; */
+  background-color: #d4e5ef;
+}
+
+#id-number > p {
+  text-align: center;
+}
+
+#total-amount-container {
+  gap: 10px;
+}
+
+#add-item {
+  background-color: #2d91e0;
+}
+
+#customer-container-input,
+#total-amount-container,
+#cancel-add-container {
+  display: flex;
+}
+
+#cancel-add-container {
+  gap: 10px;
+}
+
+.cancel-add-order,
+#add-item {
+  color: white;
+  border-radius: 8px;
+  border: none;
+  height: 30px;
+}
+
+#cancel-order {
+  background-color: #6e747e;
+}
+
+#add-item-order {
+  background-color: #f55b3a;
+}
+
+.customer,
+.cancel-add-order {
+  flex: 1;
+}
+
+#customer-field {
+  flex: 3;
+}
+
 #filter-container {
   display: flex;
   justify-content: flex-end;
@@ -53,7 +160,8 @@ h1 {
   outline: none;
 }
 
-#orders-container > table {
+#orders-container > table,
+#orders-customer-table {
   width: 100%;
   border-collapse: collapse;
   border-spacing: 0px 30px;
