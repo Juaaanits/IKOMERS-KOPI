@@ -1,18 +1,25 @@
 /* Dashboard layout styling */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
 :root {
-    --sidebar-gradient-start: #4c2c12;
-    --sidebar-gradient-end: #b37a42;
-    --sidebar-width: 264px;
+    --sidebar-gradient-start: #3f220f;
+    --sidebar-gradient-end: #b17a45;
+    --sidebar-width: 260px;
     --sidebar-text: #ffffff;
     --accent-muted: rgba(255, 255, 255, 0.12);
-    --body-bg: #f3eee7;
+    --accent-strong: rgba(255, 255, 255, 0.16);
+    --body-bg: #f7f1e6;
     --text-primary: #2b241d;
-    --text-secondary: #655c52;
-    --divider: #e7e0d7;
-    --card-border: #f0e8de;
+    --text-secondary: #6b5c52;
+    --divider: #e7dccd;
+    --card-border: #f1e6d7;
     --focus-ring: rgba(255, 255, 255, 0.6);
-    --main-bg: #ffffff;
-    --transition-speed: 150ms;
+    --main-bg: #fdfaf5;
+    --card-bg: #f9f2e8;
+    --shadow-soft: 0 8px 20px rgba(56, 37, 20, 0.12);
+    --transition-speed: 160ms;
+    --accent-gold: #c38e61;
+    --accent-brown: #4a2d1a;
 }
 
 *,
@@ -28,7 +35,7 @@ body {
 
 body {
     margin: 0;
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-family: "Poppins", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     color: var(--text-primary);
     background: var(--body-bg);
 }
@@ -56,6 +63,7 @@ a:focus {
     display: flex;
     flex-direction: column;
     gap: 36px;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.16);
 }
 
 .brand {
@@ -65,6 +73,7 @@ a:focus {
     font-size: 1.4rem;
     font-weight: 600;
     letter-spacing: 0.03em;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .brand-icon {
@@ -96,8 +105,9 @@ a:focus {
     gap: 12px;
     padding: 12px 16px;
     border-radius: 12px;
-    transition: background-color var(--transition-speed) ease;
-    font-weight: 500;
+    transition: background-color var(--transition-speed) ease, transform var(--transition-speed) ease;
+    font-weight: 600;
+    color: #f6ede4;
 }
 
 .sidebar-nav a .nav-icon {
@@ -109,12 +119,19 @@ a:focus {
     border-radius: 8px;
     background-color: var(--accent-muted);
     font-size: 1.05rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .sidebar-nav a:hover,
 .sidebar-nav a:focus,
 .sidebar-nav a[aria-current="page"] {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: var(--accent-strong);
+    transform: translateX(4px);
+    border-left: 4px solid #f5d2a8;
+}
+
+.sidebar-nav a[aria-current="page"] .nav-icon {
+    background-color: rgba(255, 255, 255, 0.24);
 }
 
 .sidebar-footer {
@@ -142,9 +159,10 @@ a:focus {
 .main-area {
     flex: 1;
     background-color: var(--main-bg);
-    padding: 20px 0 0 0;
+    padding: 12px 16px 20px 12px;
     display: flex;
     flex-direction: column;
+    gap: 16px;
     box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.02);
 }
 
@@ -152,14 +170,18 @@ a:focus {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 24px 16px 12px; /* reduced left spacing to bring content closer to sidebar */
-    border-bottom: 2px solid #e7e0d7; /* only bottom border */
+    padding: 14px 22px;
+    background: #fff7ee;
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    box-shadow: var(--shadow-soft);
 }
 
 .main-header h1 {
     margin: 0;
     font-size: 2rem;
     font-weight: 700;
+    color: var(--accent-brown);
 }
 
 .main-header p {
@@ -179,7 +201,7 @@ a:focus {
     width: 36px;
     height: 36px;
     border-radius: 999px;
-    background: linear-gradient(180deg, rgba(255, 209, 153, 0.95) 0%, rgba(245, 182, 111, 0.95) 100%);
+    background: linear-gradient(180deg, rgba(255, 209, 153, 0.95) 0%, rgba(214, 148, 91, 0.95) 100%);
     color: #61361c;
     display: inline-flex;
     align-items: center;
@@ -189,75 +211,76 @@ a:focus {
 }
 
 .empty-state {
-  flex: 1;
-  border: none;
-  display: flex;
-  flex-direction: column; /* stack inner elements vertically */
-  align-items: stretch;
-  justify-content: flex-start;
-  background-color: #ffffff;
-  padding: 0 0 12px 12px;
-  color: var(--text-secondary);
-  text-align: center;
-  background-color: #b37a42;
+    flex: 1;
+    border: none;
+    display: flex;
+    flex-direction: column; /* stack inner elements vertically */
+    align-items: stretch;
+    justify-content: flex-start;
+    background-color: transparent;
+    padding: 0 8px 12px 8px;
+    color: var(--text-secondary);
+    text-align: left;
 }
 
 /* Optional title or placeholder text */
 .empty-state strong {
-  display: block;
-  font-size: 1.1rem;
-  margin-bottom: 8px;
-  color: var(--text-primary);
+    display: block;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+    color: var(--text-primary);
 }
 
 /* Container for cards */
 .under-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: stretch;
-  gap: 24px; /* spacing between cards */
-  flex-wrap: wrap; /* makes it responsive on smaller screens */
-  margin-top: 12px; /* closer to top of section */
-  margin-left: 5px;
-  margin-right: 20px;
-  padding: 0; /* remove internal space */
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 16px; /* spacing between cards */
+    flex-wrap: wrap; /* makes it responsive on smaller screens */
+    margin-top: 12px; /* closer to top of section */
+    margin-left: 0;
+    margin-right: 0;
+    padding: 0; /* remove internal space */
 }
 
 /* Individual cards */
 .cards {
-  flex: 1; /* all cards take equal width */
-  min-width: 220px; /* prevent them from shrinking too small */
-  background-color: #fff;
-  padding: 20px 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  text-align: left;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+    flex: 1; /* all cards take equal width */
+    min-width: 220px; /* prevent them from shrinking too small */
+    background-color: var(--card-bg);
+    padding: 18px 22px;
+    box-shadow: var(--shadow-soft);
+    text-align: left;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
 }
 
 .cards:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 /* Text styles inside cards */
 .cards p {
-  margin: 0;
-  font-size: 0.95rem;
-  color: var(--text-secondary, #555);
+    margin: 0;
+    font-size: 0.95rem;
+    color: #b58652;
+    font-weight: 600;
 }
 
 .cards h3 {
-  margin: 8px 0 0;
-  font-size: 1.5rem;
-  color: var(--text-primary, #2b2b2b);
-  font-weight: 600;
+    margin: 8px 0 0;
+    font-size: 1.7rem;
+    color: var(--text-primary, #2b2b2b);
+    font-weight: 600;
 }
 
 /* Graph container: 2 large cards */
 .graph-container {
     display: flex;
-    gap: 24px;
+    gap: 16px;
     margin-top: 24px; /* space from top cards */
     flex-wrap: wrap;
 }
@@ -267,10 +290,196 @@ a:focus {
     min-width: 300px;
     background-color: #fff;
     border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    border: 1px solid rgba(0,0,0,0.05);
+    padding: 18px;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid var(--card-border);
+    background: linear-gradient(180deg, #fffdf9 0%, #f7efdf 100%);
+    display: flex;
+    flex-direction: column;
 }
+
+.chart-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    color: var(--accent-brown);
+}
+
+.chart-card__header h3 {
+    margin: 0;
+}
+
+.chart-total {
+    font-weight: 600;
+    color: #8a6a4b;
+}
+
+/* --- MODIFICATIONS START HERE --- */
+/* Chart/legend layout */
+.chart-card__body {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.55fr) minmax(180px, 0.45fr);
+    gap: 12px;
+    align-items: center;
+    grid-template-areas: "chart legend";
+    flex: 1;
+    justify-items: center;
+}
+
+.chart-legend {
+    display: grid;
+    gap: 10px;
+    /* Assign the legend to the 'legend' area (right column) */
+    grid-area: legend;
+    justify-self: start;
+    align-self: center;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    align-items: center;
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.legend-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    display: inline-block;
+    border: 2px solid rgba(0, 0, 0, 0.06);
+}
+
+.legend-label {
+    color: var(--text-primary);
+    font-size: 1rem;
+    white-space: nowrap;
+}
+
+.legend-value {
+    white-space: nowrap;
+}
+
+.chart-area {
+    position: relative;
+    display: grid;
+    place-items: center;
+    grid-area: chart;
+    width: 100%;
+    justify-self: center;
+}
+
+.chart-canvas {
+    width: 100%;
+    height: 200px;
+    /* Keep the donut compact to reduce panel height */
+    max-height: 240px;
+    max-width: 280px;
+    justify-self: center;
+}
+
+/* Spin-in animation for the donut only (center text stays still) */
+.chart-canvas--spin {
+    animation: donutSpinOnce 0.7s ease-out both;
+    transform-origin: center center;
+}
+
+@keyframes donutSpinOnce {
+    0% {
+        transform: rotate(-320deg);
+        opacity: 0;
+    }
+    60% {
+        opacity: 1;
+    }
+    100% {
+        transform: rotate(0deg);
+        opacity: 1;
+    }
+}
+
+.chart-center-label {
+    position: absolute;
+    inset: 50% auto auto 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+}
+
+.chart-center-value {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #2b241d;
+}
+
+.chart-center-caption {
+    margin-top: 2px;
+    font-size: 0.78rem;
+    color: #6b5c52;
+}
+
+/* Stack layout: chart centered, legend below (prevents overlap) */
+.chart-card__body.chart-card__body--stack {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+        "chart"
+        "legend";
+    justify-items: center;
+    gap: 18px;
+}
+
+.chart-card__body.chart-card__body--stack .chart-legend {
+    width: 100%;
+    grid-template-columns: 1fr;
+    justify-self: stretch;
+    text-align: left;
+    row-gap: 12px;
+}
+
+.chart-card__body.chart-card__body--stack .legend-item {
+    justify-content: flex-start;
+}
+
+.chart-card__body.chart-card__body--stack .chart-canvas {
+    height: 260px;
+    max-height: 320px;
+    max-width: 320px;
+    justify-self: center;
+}
+
+/* Full-width chart layout (e.g., Popular Items) */
+.chart-card__body.chart-card__body--single {
+    grid-template-columns: 1fr;
+    grid-template-areas: "chart";
+}
+
+.chart-card__body.chart-card__body--single .chart-canvas {
+    height: 320px;
+    max-height: 360px;
+    max-width: 100%;
+    justify-self: stretch;
+}
+
+@media (max-width: 960px) {
+    .chart-card__body {
+        grid-template-columns: 1fr;
+        /* Stack the elements vertically on mobile, keeping chart on top */
+        grid-template-areas:
+            "chart"
+            "legend";
+    }
+
+    .chart-canvas {
+        height: 240px;
+        /* Center the chart when stacked vertically */
+        justify-self: center;
+    }
+}
+/* --- MODIFICATIONS END HERE --- */
 
 /* Recent Orders container */
 .recent-orders-container {
@@ -278,8 +487,8 @@ a:focus {
     background-color: #fff;
     border-radius: 12px;
     padding: 24px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    border: 1px solid rgba(0,0,0,0.05);
+    box-shadow: var(--shadow-soft);
+    border: 1px solid var(--card-border);
 }
 
 .recent-orders {
@@ -293,11 +502,21 @@ a:focus {
     text-align: left;
     padding: 12px;
     border-bottom: 1px solid #e7e0d7;
+    font-size: 0.95rem;
 }
 
 .recent-orders th {
-    background-color: #f7f3ef;
-    font-weight: 600;
+    background-color: #f6eedd;
+    font-weight: 700;
+    color: #4a2d1a;
+}
+
+.recent-orders tbody tr:nth-child(odd) {
+    background-color: #fdf8ef;
+}
+
+.recent-orders tbody tr:hover {
+    background-color: #f3e8d9;
 }
 
 

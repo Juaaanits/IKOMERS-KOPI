@@ -4,12 +4,13 @@
   font-family: "Poppins", sans-serif;
 }
 
-main {
+.orders-page {
   display: flex;
   flex-direction: column;
   background-color: #faf7ee;
   padding: 20px;
   gap: 10px;
+  border-radius: 12px;
 }
 
 #header-container {
