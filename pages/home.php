@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home | IKOMERS KOPI</title>
-    <link rel="stylesheet" href="/IKOMERS-KOPI/assets/css/home-style.css?v=20251025">
+    <link rel="stylesheet" href="../assets/css/home-style.css?v=20251025">
 </head>
 
 <body>

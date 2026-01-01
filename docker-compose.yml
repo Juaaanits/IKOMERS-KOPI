@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:80"         # http://localhost:8080
+    environment:
+      DB_HOST: db
+      DB_NAME: ikomers_db
+      DB_USER: appuser
+      DB_PASS: appsecret
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - db
+
+  db:
+    image: mariadb:10.6
+    restart: unless-stopped
+    command: ["mysqld", "--innodb-flush-method=fsync"]
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: ikomers_db
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: appsecret
+    ports:
+      - "3307:3306"       # host-port 3307 to avoid clashing with local MySQL
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:5.2
+    restart: unless-stopped
+    ports:
+      - "8081:80"         # http://localhost:8081
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: rootpass
+    depends_on:
+      - db
+
+volumes:
+  db_data:
