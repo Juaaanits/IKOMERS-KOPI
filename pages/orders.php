@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once '../includes/db.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
@@ -8,6 +9,12 @@ if (!isset($_SESSION['user_id'])) {
 
 $username = $_SESSION['username'] ?? 'User';
 $initial = strtoupper(substr($username, 0, 1));
+
+$sql = "SELECT * FROM ORDERS";
+$orderResult = mysqli_query($conn, $sql);
+
+$orderRows = mysqli_fetch_all($orderResult);
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -49,8 +56,10 @@ $initial = strtoupper(substr($username, 0, 1));
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                                     xmlns="http://www.w3.org/2000/svg">
                                     <path d="M4 5H20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-                                    <path d="M4 12H20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-                                    <path d="M4 19H20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                                    <path d="M4 12H20" stroke="currentColor" stroke-width="1.6"
+                                        stroke-linecap="round" />
+                                    <path d="M4 19H20" stroke="currentColor" stroke-width="1.6"
+                                        stroke-linecap="round" />
                                 </svg>
                             </span>
                             <span>Menu</span>
@@ -64,7 +73,8 @@ $initial = strtoupper(substr($username, 0, 1));
                                     <path d="M20 21V19C20 16.7909 18.2091 15 16 15H8C5.79086 15 4 16.7909 4 19V21"
                                         stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
                                         stroke-linejoin="round" />
-                                    <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z"
+                                    <path
+                                        d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z"
                                         stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
                                         stroke-linejoin="round" />
                                 </svg>
@@ -78,9 +88,12 @@ $initial = strtoupper(substr($username, 0, 1));
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                                     xmlns="http://www.w3.org/2000/svg">
                                     <path d="M3 7H21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-                                    <path d="M7 11H17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-                                    <path d="M5 15H19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-                                    <path d="M9 19H15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                                    <path d="M7 11H17" stroke="currentColor" stroke-width="1.6"
+                                        stroke-linecap="round" />
+                                    <path d="M5 15H19" stroke="currentColor" stroke-width="1.6"
+                                        stroke-linecap="round" />
+                                    <path d="M9 19H15" stroke="currentColor" stroke-width="1.6"
+                                        stroke-linecap="round" />
                                 </svg>
                             </span>
                             <span>Orders</span>
@@ -94,11 +107,13 @@ $initial = strtoupper(substr($username, 0, 1));
                                     <path d="M16 21V19C16 17.8954 15.1046 17 14 17H10C8.89543 17 8 17.8954 8 19V21"
                                         stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
                                         stroke-linejoin="round" />
-                                    <path d="M12 13C13.6569 13 15 11.6569 15 10C15 8.34315 13.6569 7 12 7C10.3431 7 9 8.34315 9 10C9 11.6569 10.3431 13 12 13Z"
+                                    <path
+                                        d="M12 13C13.6569 13 15 11.6569 15 10C15 8.34315 13.6569 7 12 7C10.3431 7 9 8.34315 9 10C9 11.6569 10.3431 13 12 13Z"
                                         stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
                                         stroke-linejoin="round" />
                                     <path d="M20 8V4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-                                    <path d="M22 6H18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                                    <path d="M22 6H18" stroke="currentColor" stroke-width="1.6"
+                                        stroke-linecap="round" />
                                     <path d="M4 8V4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
                                     <path d="M6 6H2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
                                 </svg>
@@ -188,7 +203,8 @@ $initial = strtoupper(substr($username, 0, 1));
                                 </select>
                                 <div id="cancel-add-container">
                                     <button class="cancel-add-order" id="cancel-order" type="button">Cancel</button>
-                                    <button class="cancel-add-order" id="add-item-order" type="submit">Add Order</button>
+                                    <button class="cancel-add-order" id="add-item-order" type="submit">Add
+                                        Order</button>
                                 </div>
                             </div>
                         </form>
@@ -228,31 +244,52 @@ $initial = strtoupper(substr($username, 0, 1));
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="order-item">
-                                <td>131</td>
-                                <td>Maria Sanchez</td>
-                                <td>1x Cappuccino ($4.75)</td>
-                                <td>4.75</td>
-                                <td>
-                                    <div id="item-status">Completed</div>
-                                </td>
-                                <td>2025-01-05</td>
-                                <td>
-                                    <button class="action-button" type="button">
-                                        <img src="../assets/icons/overview.png" alt="view-order"
-                                            class="img-action-button">
-                                    </button>
-                                    <button class="action-button" type="button">
-                                        <img src="../assets/icons/file-edit.png" alt="edit-order"
-                                            class="img-action-button">
-                                    </button>
-                                    <button class="action-button" type="button">
-                                        <img src="../assets/icons/octagon-xmark.png" alt="remove-order"
-                                            class="img-action-button">
-                                    </button>
+                            <?php
+                            $orderNumRows = $orderResult->num_rows;
 
-                                </td>
-                            </tr>
+                            while ($orderNumRows !== 0) {
+                                $row = $orderRows[$orderNumRows - 1];
+                                $orderId = $row[0];
+                                $item = $row[1];
+                                $status = $row[3];
+                                $dateTime = $row[4];
+                                $customerId = $row[5];
+
+                                $customerSql = "SELECT * FROM CUSTOMER WHERE CUSTOMER_ID = $customerId";
+                                $customerResult = mysqli_query($conn, $customerSql);
+                                $customerRow = mysqli_fetch_assoc($customerResult);
+                                $customer = $customerRow['customer'];
+
+                                ?>
+                                <tr class="order-item">
+                                    <td> <?php echo $orderId; ?> </td>
+                                    <td> <?php echo $customer; ?> </td>
+                                    <td> <?php echo $item; ?></td>
+                                    <td>4.75</td>
+                                    <td>
+                                        <div id="item-status"> <?php echo $status; ?> </div>
+                                    </td>
+                                    <td> <?php echo $dateTime; ?> </td>
+                                    <td>
+                                        <button class="action-button" type="button">
+                                            <img src="../assets/icons/overview.png" alt="view-order"
+                                                class="img-action-button">
+                                        </button>
+                                        <button class="action-button" type="button">
+                                            <img src="../assets/icons/file-edit.png" alt="edit-order"
+                                                class="img-action-button">
+                                        </button>
+                                        <button class="action-button" type="button">
+                                            <img src="../assets/icons/octagon-xmark.png" alt="remove-order"
+                                                class="img-action-button">
+                                        </button>
+                                    </td>
+                                </tr>
+                                <?php
+                                $orderNumRows--;
+                            }
+
+                            ?>
                         </tbody>
                     </table>
                 </div>
