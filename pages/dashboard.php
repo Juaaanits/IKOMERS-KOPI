@@ -38,7 +38,7 @@ $initial = strtoupper(substr($username, 0, 1));
                     </a>
                     </li>
                     <li>
-                    <a href="#">
+                    <a href="menu.php">
                         <span class="nav-icon" aria-hidden="true">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M4 5H20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
@@ -50,7 +50,7 @@ $initial = strtoupper(substr($username, 0, 1));
                         </a>
                     </li>
                     <li>
-                        <a href="#">
+                        <a href="customers.php">
                             <span class="nav-icon" aria-hidden="true">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M20 21V19C20 16.7909 18.2091 15 16 15H8C5.79086 15 4 16.7909 4 19V21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
@@ -163,6 +163,7 @@ $initial = strtoupper(substr($username, 0, 1));
                         <tr>
                             <th>Order ID</th>
                             <th>Customer</th>
+                            <th>Items</th>
                             <th>Total</th>
                             <th>Status</th>
                         </tr>
@@ -171,13 +172,15 @@ $initial = strtoupper(substr($username, 0, 1));
                         <tr>
                             <td>#101</td>
                             <td>John Doe</td>
-                            <td>$23.50</td>
+                            <td>1x Cappuccino ($4.75)</td>
+                            <td>$4.75</td>
                             <td>Completed</td>
                         </tr>
                         <tr>
                             <td>#102</td>
                             <td>Jane Smith</td>
-                            <td>$15.00</td>
+                            <td>22x Americano ($3.75)</td>
+                            <td>$82.50</td>
                             <td>Pending</td>
                         </tr>
                         <!-- Add more rows -->
