@@ -111,6 +111,12 @@
     margin-top: 10px;
 }
 
+@media (max-width: 1100px) {
+    .menu-grid {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+}
+
 .menu-card {
     background: var(--menu-card-bg);
     border: 1px solid var(--menu-border);
@@ -417,9 +423,18 @@
 
     .menu-fab {
         right: 22px;
+        bottom: 20px;
     }
 
     .menu-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .menu-modal__card {
+        padding: 14px;
+    }
+
+    .form-grid {
         grid-template-columns: 1fr;
     }
 }

@@ -70,7 +70,7 @@ $initial = strtoupper(substr($username, 0, 1));
                     </a>
                     </li>
                     <li>
-                        <a href="#">
+                        <a href="users.php">
                             <span class="nav-icon" aria-hidden="true">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M16 21V19C16 17.8954 15.1046 17 14 17H10C8.89543 17 8 17.8954 8 19V21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>

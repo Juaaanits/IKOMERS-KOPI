@@ -62,12 +62,13 @@
     background: #fff7ee;
     border-radius: 12px;
     border: 1px solid var(--cust-border);
-    overflow: hidden;
+    overflow-x: auto;
     box-shadow: var(--cust-shadow);
 }
 
 .customers-table {
     width: 100%;
+    min-width: 960px;
     border-collapse: collapse;
 }
 
@@ -467,6 +468,11 @@
 }
 
 @media (max-width: 980px) {
+    .customers-page__header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
     .customers-insights {
         grid-template-columns: 1fr;
     }
@@ -488,5 +494,22 @@
     .header-actions input,
     .header-actions select {
         flex: 1 1 220px;
+    }
+}
+
+@media (max-width: 640px) {
+    .customers-page {
+        padding: 14px 10px 84px;
+    }
+
+    .customers-page__header h2 {
+        font-size: 1.45rem;
+    }
+
+    .customers-fab {
+        right: 18px;
+        bottom: 18px;
+        width: 52px;
+        height: 52px;
     }
 }
