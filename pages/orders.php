@@ -146,9 +146,18 @@ $metrics = [
             <div>
                 <h1>Dashboard</h1>
             </div>
-            <div class="account-pill">
-                <span>Hello, <?php echo htmlspecialchars($username); ?></span>
-                <span class="account-avatar"><?php echo htmlspecialchars($initial); ?></span>
+            <div class="account-menu">
+                <button class="account-trigger" id="account-trigger" type="button" aria-expanded="false" aria-controls="account-dropdown">
+                    <span>Hello, <?php echo htmlspecialchars($username); ?></span>
+                    <span class="account-avatar"><?php echo htmlspecialchars($initial); ?></span>
+                </button>
+                <div class="account-dropdown" id="account-dropdown" hidden>
+                    <div class="account-dropdown__head">
+                        <strong><?php echo htmlspecialchars($username); ?></strong>
+                    </div>
+                    <a href="users.php">My Profile</a>
+                    <a href="logout.php" class="danger">Sign Out</a>
+                </div>
             </div>
         </header>
 
@@ -410,6 +419,7 @@ $metrics = [
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="../assets/js/custom/orders.js"></script>
+<script src="../assets/js/account-menu.js"></script>
 <script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 </html>

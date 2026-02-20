@@ -176,7 +176,7 @@ a:focus {
 }
 
 .sidebar-footer {
-    display: grid;
+    display: none;
     gap: 12px;
     font-size: 0.95rem;
 }
