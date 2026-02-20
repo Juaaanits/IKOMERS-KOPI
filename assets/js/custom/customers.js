@@ -40,6 +40,19 @@ document.addEventListener("DOMContentLoaded", () => {
     colors: ["#6b35d9", "#e23c7e", "#f0b22f", "#2b90e0", "#28a56b"],
   };
 
+  const syncInsightsHeight = () => {
+    const leftCard = document.querySelector(".customers-insights .insight-card.chart-card");
+    const rightStack = document.querySelector(".customers-insights .insight-metrics");
+    if (!leftCard || !rightStack) return;
+
+    if (window.innerWidth <= 980) {
+      rightStack.style.height = "";
+      return;
+    }
+
+    rightStack.style.height = `${leftCard.offsetHeight}px`;
+  };
+
   if (spendingCtx && Chart) {
     new Chart(spendingCtx, {
       type: "doughnut",
@@ -74,4 +87,10 @@ document.addEventListener("DOMContentLoaded", () => {
       )
       .join("");
   }
+
+  // Keep right metrics column exactly equal to left chart card on desktop.
+  syncInsightsHeight();
+  window.addEventListener("resize", syncInsightsHeight);
+  window.addEventListener("load", syncInsightsHeight);
+  setTimeout(syncInsightsHeight, 0);
 });
