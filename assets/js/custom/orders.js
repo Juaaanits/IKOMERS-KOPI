@@ -8,6 +8,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const openSelectCustomer = document.getElementById("openSelectCustomer");
   const closeSelectCustomer = document.getElementById("closeSelectCustomer");
   const cancelSelectCustomer = document.getElementById("cancelSelectCustomer");
+  const confirmSelectCustomer = document.getElementById("confirmSelectCustomer");
+  const selectCustomerSearchInput = document.getElementById("select-customer-search-input");
+  const selectCustomerRows = Array.from(document.querySelectorAll(".select-customer-row"));
+  const orderCustomerNameInput = document.getElementById("order-customer-name");
+  const orderCustomerIdInput = document.getElementById("order-customer-id");
+  const orderItemsHiddenInput = document.querySelector(".order-items-hidden");
+  const addOrderItemBtn = document.getElementById("addOrderItemBtn");
+  const orderItemsTableBody = document.querySelector(".items-table tbody");
+  const orderTotalInput = document.querySelector("#orderModal input[name='total']");
+  const menuCatalog = Array.isArray(window.menuItemCatalog) ? window.menuItemCatalog : [];
+  const menuCatalogMap = new Map(
+    menuCatalog.map((item) => [String(item.name || "").trim().toLowerCase(), item])
+  );
 
   const statusModal = document.getElementById("statusModal");
   const closeStatusModal = document.getElementById("closeStatusModal");
@@ -27,6 +40,115 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const openDialog = (dlg) => dlg?.showModal();
   const closeDialog = (dlg) => dlg?.close();
+  const parseJsonResponse = async (res) => {
+    const raw = await res.text();
+    try {
+      return JSON.parse(raw);
+    } catch {
+      throw new Error(raw.slice(0, 180) || "Invalid JSON response");
+    }
+  };
+  let selectedCustomerRow = null;
+  let activeStatusOrderId = 0;
+
+  const formatMoney = (value) => Number(value).toFixed(2);
+
+  const ensureEmptyStateRow = () => {
+    if (!orderItemsTableBody) return;
+    const hasDataRows = orderItemsTableBody.querySelectorAll(".order-item-edit-row").length > 0;
+    const emptyRow = orderItemsTableBody.querySelector(".items-empty-row");
+    if (!hasDataRows && !emptyRow) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = '<td colspan="6" class="items-empty-row"></td>';
+      orderItemsTableBody.appendChild(tr);
+      return;
+    }
+    if (hasDataRows && emptyRow) {
+      emptyRow.closest("tr")?.remove();
+    }
+  };
+
+  const buildItemsPayloadAndTotal = () => {
+    if (!orderItemsTableBody) return;
+    const rows = Array.from(orderItemsTableBody.querySelectorAll(".order-item-edit-row"));
+    const tokens = [];
+    let orderTotal = 0;
+
+    rows.forEach((row) => {
+      const itemInput = row.querySelector(".order-item-name-input");
+      const qtyInput = row.querySelector(".order-item-qty-input");
+      const priceInput = row.querySelector(".order-item-price-input");
+      const totalCell = row.querySelector(".order-item-total");
+
+      const itemName = (itemInput?.value || "").trim();
+      const qty = Math.max(1, Number.parseInt(qtyInput?.value || "1", 10) || 1);
+      const price = Math.max(0, Number.parseFloat(priceInput?.value || "0") || 0);
+      const lineTotal = qty * price;
+      orderTotal += lineTotal;
+
+      if (totalCell) totalCell.textContent = formatMoney(lineTotal);
+      if (itemName) {
+        tokens.push(`${qty}x ${itemName} ($${formatMoney(price)})`);
+      }
+    });
+
+    if (orderTotalInput) orderTotalInput.value = formatMoney(orderTotal);
+    if (orderItemsHiddenInput) orderItemsHiddenInput.value = tokens.join(", ");
+  };
+
+  const applyMenuItemToRow = (row) => {
+    const nameInput = row.querySelector(".order-item-name-input");
+    const idInput = row.querySelector(".order-item-id-input");
+    const priceInput = row.querySelector(".order-item-price-input");
+    const key = (nameInput?.value || "").trim().toLowerCase();
+    const match = menuCatalogMap.get(key);
+
+    if (match) {
+      if (idInput) idInput.value = String(match.id || 0);
+      if (priceInput) priceInput.value = formatMoney(match.price || 0);
+    }
+  };
+
+  const addItemRow = (seed = {}) => {
+    if (!orderItemsTableBody) return;
+    ensureEmptyStateRow();
+
+    const tr = document.createElement("tr");
+    tr.className = "order-item-edit-row";
+    tr.innerHTML = `
+      <td><input type="text" class="order-item-input order-item-name-input" value="${seed.name || ""}" placeholder="Item name" list="order-item-options" autocomplete="off"></td>
+      <td><input type="number" class="order-item-input order-item-id-input" value="${seed.id || 0}" min="0" step="1" readonly></td>
+      <td><input type="number" class="order-item-input order-item-qty-input" value="${seed.qty || 1}" min="1" step="1"></td>
+      <td><input type="number" class="order-item-input order-item-price-input" value="${seed.price || 0}" min="0" step="0.01" readonly></td>
+      <td class="order-item-total">0.00</td>
+      <td><button type="button" class="row-remove-btn" aria-label="Remove item">&times;</button></td>
+    `;
+
+    tr.querySelectorAll("input").forEach((input) => {
+      input.addEventListener("input", () => {
+        if (input.classList.contains("order-item-name-input")) {
+          applyMenuItemToRow(tr);
+        }
+        buildItemsPayloadAndTotal();
+      });
+      input.addEventListener("change", () => {
+        if (input.classList.contains("order-item-name-input")) {
+          applyMenuItemToRow(tr);
+        }
+        buildItemsPayloadAndTotal();
+      });
+    });
+    tr.querySelector(".row-remove-btn")?.addEventListener("click", () => {
+      tr.remove();
+      ensureEmptyStateRow();
+      buildItemsPayloadAndTotal();
+    });
+
+    orderItemsTableBody.appendChild(tr);
+    applyMenuItemToRow(tr);
+    ensureEmptyStateRow();
+    buildItemsPayloadAndTotal();
+  };
 
   fab?.addEventListener("click", () => openDialog(orderModal));
   closeOrderModal?.addEventListener("click", () => closeDialog(orderModal));
@@ -36,11 +158,48 @@ document.addEventListener("DOMContentLoaded", () => {
   closeSelectCustomer?.addEventListener("click", () => closeDialog(selectCustomerModal));
   cancelSelectCustomer?.addEventListener("click", () => closeDialog(selectCustomerModal));
 
-  document.querySelectorAll(".status-edit-btn").forEach((btn) => {
+  addOrderItemBtn?.addEventListener("click", () => addItemRow());
+
+  selectCustomerRows.forEach((row) => {
+    row.addEventListener("click", () => {
+      if (selectedCustomerRow) selectedCustomerRow.classList.remove("is-selected");
+      selectedCustomerRow = row;
+      selectedCustomerRow.classList.add("is-selected");
+    });
+
+    row.addEventListener("dblclick", () => {
+      selectedCustomerRow = row;
+      const id = row.dataset.id || "";
+      const name = row.dataset.name || "";
+      if (orderCustomerNameInput) orderCustomerNameInput.value = name;
+      if (orderCustomerIdInput) orderCustomerIdInput.value = id ? `ID: ${id}` : "";
+      closeDialog(selectCustomerModal);
+    });
+  });
+
+  selectCustomerSearchInput?.addEventListener("input", () => {
+    const keyword = selectCustomerSearchInput.value.trim().toLowerCase();
+    selectCustomerRows.forEach((row) => {
+      const text = row.textContent?.toLowerCase() || "";
+      row.style.display = text.includes(keyword) ? "" : "none";
+    });
+  });
+
+  confirmSelectCustomer?.addEventListener("click", () => {
+    if (!selectedCustomerRow) return;
+    const id = selectedCustomerRow.dataset.id || "";
+    const name = selectedCustomerRow.dataset.name || "";
+    if (orderCustomerNameInput) orderCustomerNameInput.value = name;
+    if (orderCustomerIdInput) orderCustomerIdInput.value = id ? `ID: ${id}` : "";
+    closeDialog(selectCustomerModal);
+  });
+
+  document.querySelectorAll(".js-edit-order").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const orderId = btn.dataset.order || "";
+      const orderId = Number.parseInt(btn.dataset.orderId || "0", 10);
       const currentStatus = btn.dataset.status || "Pending";
-      if (statusOrderLabel) statusOrderLabel.textContent = `Order: #${orderId}`;
+      activeStatusOrderId = orderId;
+      if (statusOrderLabel) statusOrderLabel.textContent = `Order: #${orderId || "-"}`;
       if (statusSelect) statusSelect.value = currentStatus;
       openDialog(statusModal);
     });
@@ -48,7 +207,53 @@ document.addEventListener("DOMContentLoaded", () => {
 
   closeStatusModal?.addEventListener("click", () => closeDialog(statusModal));
   cancelStatusModal?.addEventListener("click", () => closeDialog(statusModal));
-  saveStatusModal?.addEventListener("click", () => closeDialog(statusModal));
+  saveStatusModal?.addEventListener("click", async () => {
+    if (!activeStatusOrderId || !statusSelect) return;
+
+    try {
+      const fd = new FormData();
+      fd.append("id", String(activeStatusOrderId));
+      fd.append("status", statusSelect.value);
+
+      const res = await fetch("orders_update.php", { method: "POST", body: fd });
+      const data = await parseJsonResponse(res);
+
+      if (!data.ok) {
+        window.showAppNotice?.(data.message || "Failed to update order", "error");
+        return;
+      }
+
+      window.location.reload();
+    } catch (error) {
+      window.showAppNotice?.(String(error.message || error), "error");
+    }
+  });
+
+  document.querySelectorAll(".js-delete-order").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const orderId = Number.parseInt(btn.dataset.orderId || "0", 10);
+      if (!orderId) return;
+      const confirmed = window.confirm("Delete this order permanently?");
+      if (!confirmed) return;
+
+      try {
+        const fd = new FormData();
+        fd.append("id", String(orderId));
+
+        const res = await fetch("orders_delete.php", { method: "POST", body: fd });
+        const data = await parseJsonResponse(res);
+
+        if (!data.ok) {
+          window.showAppNotice?.(data.message || "Failed to delete order", "error");
+          return;
+        }
+
+        window.location.reload();
+      } catch (error) {
+        window.showAppNotice?.(String(error.message || error), "error");
+      }
+    });
+  });
 
   document.querySelectorAll(".js-view-order").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -106,6 +311,14 @@ document.addEventListener("DOMContentLoaded", () => {
   closeViewOrderModal?.addEventListener("click", () => closeDialog(viewOrderModal));
   cancelViewOrderModal?.addEventListener("click", () => closeDialog(viewOrderModal));
   printViewOrderBtn?.addEventListener("click", () => window.print());
+
+  // Keep backend-required items field non-empty when user submits from cloned UI.
+  document.querySelector("#orderModal form")?.addEventListener("submit", () => {
+    buildItemsPayloadAndTotal();
+    if (orderItemsHiddenInput && !orderItemsHiddenInput.value.trim()) {
+      orderItemsHiddenInput.value = "1x Custom Order ($0.01)";
+    }
+  });
 
   // Order status donut
   const statusCtx = document.getElementById("orderStatusChart");

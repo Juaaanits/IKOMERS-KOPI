@@ -13,12 +13,89 @@ $statusCounts = [
 ];
 
 $orders = [];
+$menuCatalog = [];
+$customerOptions = [];
 $orderResult = '';
 $orderResultType = '';
+$perPage = 3;
+$currentPage = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+if ($currentPage < 1) {
+    $currentPage = 1;
+}
+$totalPages = 1;
 
 $dbReady = $conn && $conn instanceof mysqli && $conn->connect_errno === 0;
 
 if ($dbReady) {
+    $conn->query(
+        "CREATE TABLE IF NOT EXISTS customers (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(120) NOT NULL,
+            email VARCHAR(190) NOT NULL,
+            phone VARCHAR(40) NOT NULL,
+            address VARCHAR(255) DEFAULT '',
+            orders_count INT UNSIGNED NOT NULL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )"
+    );
+
+    $customerCountResult = $conn->query("SELECT COUNT(*) AS total FROM customers");
+    $customerCount = 0;
+    if ($customerCountResult) {
+        $customerCountRow = $customerCountResult->fetch_assoc();
+        $customerCount = (int) ($customerCountRow['total'] ?? 0);
+        $customerCountResult->free();
+    }
+
+    if ($customerCount === 0) {
+        $seedCustomers = [
+            ['Juanito M. Ramos II', 'juanito@example.com', '09082611230', 'Block 26 Lot 11, Goodwill Homes 1, San Bartolome', 2],
+            ['Marcus Johnson', 'mjohnson.business@email.net', '(617) 555-9021', '463 Commonwealth Ave, Boston, MA', 18],
+            ['William O\'Connor', 'woconnor55@email.net', '(702) 555-1234', '567 Desert Palm Dr, Las Vegas, NV', 26],
+            ['Maria Sanchez', 'msanchez.2024@email.com', '(512) 555-4567', '3201 River Road, Austin, TX', 20],
+            ['David Kim', 'dkim_personal@email.com', '(404) 555-8901', '1245 Peachtree St, Atlanta, GA', 12],
+            ['Rachel Foster', 'rfoster.contact@email.com', '(503) 555-2345', '201 Waterfront St, Portland, OR', 1]
+        ];
+
+        $seedCustomerStmt = $conn->prepare("INSERT INTO customers (name, email, phone, address, orders_count) VALUES (?, ?, ?, ?, ?)");
+        if ($seedCustomerStmt) {
+            foreach ($seedCustomers as $seedCustomer) {
+                $seedCustomerName = $seedCustomer[0];
+                $seedCustomerEmail = $seedCustomer[1];
+                $seedCustomerPhone = $seedCustomer[2];
+                $seedCustomerAddress = $seedCustomer[3];
+                $seedCustomerOrders = (int) $seedCustomer[4];
+                $seedCustomerStmt->bind_param('ssssi', $seedCustomerName, $seedCustomerEmail, $seedCustomerPhone, $seedCustomerAddress, $seedCustomerOrders);
+                $seedCustomerStmt->execute();
+            }
+            $seedCustomerStmt->close();
+        }
+    }
+
+    $customerListResult = $conn->query("SELECT id, name, email, phone FROM customers ORDER BY id DESC");
+    if ($customerListResult) {
+        while ($customerRow = $customerListResult->fetch_assoc()) {
+            $customerOptions[] = [
+                'id' => (int) $customerRow['id'],
+                'name' => $customerRow['name'],
+                'email' => $customerRow['email'],
+                'phone' => $customerRow['phone']
+            ];
+        }
+        $customerListResult->free();
+    }
+
+    $conn->query(
+        "CREATE TABLE IF NOT EXISTS menu_items (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(120) NOT NULL,
+            price DECIMAL(10,2) NOT NULL,
+            description TEXT NULL,
+            image_path VARCHAR(255) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )"
+    );
+
     $conn->query(
         "CREATE TABLE IF NOT EXISTS orders (
             id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -29,6 +106,55 @@ if ($dbReady) {
             ordered_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         )"
     );
+
+    $menuResult = $conn->query("SELECT id, name, price FROM menu_items ORDER BY name ASC");
+    if ($menuResult) {
+        while ($row = $menuResult->fetch_assoc()) {
+            $menuCatalog[] = [
+                'id' => (int) $row['id'],
+                'name' => $row['name'],
+                'price' => (float) $row['price']
+            ];
+        }
+        $menuResult->free();
+    }
+
+    // Seed a starter catalog when menu is empty so order item mapping works out of the box.
+    if (empty($menuCatalog)) {
+        $seedItems = [
+            ['Black Coffee', 4.25, 'Bold brewed coffee with a smooth finish.', 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80'],
+            ['Cappuccino', 4.75, 'Equal parts espresso, steamed milk, and foam.', 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1200&q=80'],
+            ['Latte', 4.50, 'Creamy steamed milk over a rich espresso shot.', 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=1200&q=80'],
+            ['Mocha', 5.10, 'Espresso, chocolate, and steamed milk harmony.', 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80'],
+            ['Americano', 3.95, 'Espresso diluted with hot water for a clean, bold cup.', 'https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=1200&q=80'],
+            ['Flat White', 4.85, 'Velvety microfoam over double espresso.', 'https://images.unsplash.com/photo-1510627498534-cf7e9002facc?auto=format&fit=crop&w=1200&q=80']
+        ];
+
+        $seedStmt = $conn->prepare("INSERT INTO menu_items (name, price, description, image_path) VALUES (?, ?, ?, ?)");
+        if ($seedStmt) {
+            foreach ($seedItems as $seed) {
+                $seedName = $seed[0];
+                $seedPrice = (float) $seed[1];
+                $seedDesc = $seed[2];
+                $seedImage = $seed[3];
+                $seedStmt->bind_param('sdss', $seedName, $seedPrice, $seedDesc, $seedImage);
+                $seedStmt->execute();
+            }
+            $seedStmt->close();
+        }
+
+        $menuResult = $conn->query("SELECT id, name, price FROM menu_items ORDER BY name ASC");
+        if ($menuResult) {
+            while ($row = $menuResult->fetch_assoc()) {
+                $menuCatalog[] = [
+                    'id' => (int) $row['id'],
+                    'name' => $row['name'],
+                    'price' => (float) $row['price']
+                ];
+            }
+            $menuResult->free();
+        }
+    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_order'])) {
@@ -74,38 +200,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_order'])) {
 }
 
 if ($dbReady) {
-    $result = $conn->query('SELECT id, customer_name, items, total, status, ordered_at FROM orders ORDER BY id DESC');
-    if ($result) {
-        while ($row = $result->fetch_assoc()) {
-            $orders[] = [
-                'id' => (int) $row['id'],
-                'customer' => $row['customer_name'],
-                'items' => $row['items'],
-                'total' => (float) $row['total'],
-                'status' => $row['status'],
-                'date' => date('Y-m-d H:i', strtotime($row['ordered_at']))
-            ];
+    $metricsResult = $conn->query("
+        SELECT
+            COUNT(*) AS total_orders,
+            COALESCE(SUM(total), 0) AS total_revenue,
+            COALESCE(AVG(total), 0) AS avg_order_value
+        FROM orders
+    ");
+    if ($metricsResult) {
+        $metricsRow = $metricsResult->fetch_assoc();
+        $metrics = [
+            'totalOrders' => (int) ($metricsRow['total_orders'] ?? 0),
+            'totalRevenue' => (float) ($metricsRow['total_revenue'] ?? 0),
+            'avgOrderValue' => (float) ($metricsRow['avg_order_value'] ?? 0)
+        ];
+        $metricsResult->free();
+    } else {
+        $metrics = [
+            'totalOrders' => 0,
+            'totalRevenue' => 0.0,
+            'avgOrderValue' => 0.0
+        ];
+    }
 
-            if (isset($statusCounts[$row['status']])) {
-                $statusCounts[$row['status']]++;
+    $totalPages = max(1, (int) ceil($metrics['totalOrders'] / $perPage));
+    if ($currentPage > $totalPages) {
+        $currentPage = $totalPages;
+    }
+
+    $statusResult = $conn->query("SELECT status, COUNT(*) AS total FROM orders GROUP BY status");
+    if ($statusResult) {
+        while ($statusRow = $statusResult->fetch_assoc()) {
+            $statusName = $statusRow['status'];
+            if (isset($statusCounts[$statusName])) {
+                $statusCounts[$statusName] = (int) $statusRow['total'];
             }
         }
-        $result->free();
+        $statusResult->free();
     }
-}
 
-$totalOrders = count($orders);
-$totalRevenue = 0.0;
-foreach ($orders as $orderRow) {
-    $totalRevenue += (float) $orderRow['total'];
+    $offset = ($currentPage - 1) * $perPage;
+    $orderStmt = $conn->prepare('SELECT id, customer_name, items, total, status, ordered_at FROM orders ORDER BY id DESC LIMIT ? OFFSET ?');
+    if ($orderStmt) {
+        $orderStmt->bind_param('ii', $perPage, $offset);
+        $orderStmt->execute();
+        $orderResultSet = $orderStmt->get_result();
+        if ($orderResultSet) {
+            while ($row = $orderResultSet->fetch_assoc()) {
+                $orders[] = [
+                    'id' => (int) $row['id'],
+                    'customer' => $row['customer_name'],
+                    'items' => $row['items'],
+                    'total' => (float) $row['total'],
+                    'status' => $row['status'],
+                    'date' => date('Y-m-d H:i', strtotime($row['ordered_at']))
+                ];
+            }
+            $orderResultSet->free();
+        }
+        $orderStmt->close();
+    }
+} else {
+    $metrics = [
+        'totalOrders' => 0,
+        'totalRevenue' => 0.0,
+        'avgOrderValue' => 0.0
+    ];
 }
-$avgOrderValue = $totalOrders > 0 ? ($totalRevenue / $totalOrders) : 0.0;
-
-$metrics = [
-    'totalOrders' => $totalOrders,
-    'totalRevenue' => $totalRevenue,
-    'avgOrderValue' => $avgOrderValue
-];
 
 if ($conn && $conn instanceof mysqli) {
     $conn->close();
@@ -288,13 +449,13 @@ if ($conn && $conn instanceof mysqli) {
                                             <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/>
                                         </svg>
                                     </button>
-                                    <button type="button" class="icon-btn icon-btn--edit status-edit-btn" data-order="<?php echo htmlspecialchars($order['id']); ?>" data-status="<?php echo htmlspecialchars($order['status']); ?>" aria-label="Edit order">
+                                    <button type="button" class="icon-btn icon-btn--edit js-edit-order" data-order-id="<?php echo (int) $order['id']; ?>" data-status="<?php echo htmlspecialchars($order['status']); ?>" aria-label="Edit order">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M4 20H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                                             <path d="M15.5 4.5L19.5 8.5L10 18H6V14L15.5 4.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
                                     </button>
-                                    <button type="button" class="icon-btn icon-btn--delete" aria-label="Delete order">
+                                    <button type="button" class="icon-btn icon-btn--delete js-delete-order" data-order-id="<?php echo (int) $order['id']; ?>" aria-label="Delete order">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M6 7H18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                                             <path d="M10 11V17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
@@ -312,9 +473,21 @@ if ($conn && $conn instanceof mysqli) {
             </div>
 
             <div class="pagination">
-                <button type="button" aria-label="Previous page">&lt;</button>
-                <span>Page 1</span>
-                <button type="button" aria-label="Next page">&gt;</button>
+                <?php $prevPage = max(1, $currentPage - 1); ?>
+                <?php $nextPage = min($totalPages, $currentPage + 1); ?>
+                <button
+                    type="button"
+                    aria-label="Previous page"
+                    <?php echo $currentPage <= 1 ? 'disabled' : ''; ?>
+                    onclick="window.location.href='?page=<?php echo $prevPage; ?>'"
+                >&lt;</button>
+                <span>Page <?php echo $currentPage; ?> of <?php echo $totalPages; ?></span>
+                <button
+                    type="button"
+                    aria-label="Next page"
+                    <?php echo $currentPage >= $totalPages ? 'disabled' : ''; ?>
+                    onclick="window.location.href='?page=<?php echo $nextPage; ?>'"
+                >&gt;</button>
             </div>
 
             <div class="orders-insights">
@@ -359,35 +532,64 @@ if ($conn && $conn instanceof mysqli) {
             <button id="orders-fab" class="orders-fab" type="button" aria-label="Add new order">+</button>
 
             <dialog id="orderModal" class="orders-modal">
-                <form class="orders-modal__card" method="post" action="#" novalidate>
+                <form class="orders-modal__card order-create-card" method="post" action="#" novalidate>
                     <header class="orders-modal__header">
                         <h3>Add New Order</h3>
-                        <button type="button" class="close-btn" id="closeOrderModal" aria-label="Close add order form">×</button>
+                        <button type="button" class="close-btn" id="closeOrderModal" aria-label="Close add order form">&times;</button>
                     </header>
-                    <div class="form-grid">
+
+                    <div class="order-create-grid">
                         <label class="field customer-field field--full">
-                            <span>Customer</span>
+                            <span>Customer:</span>
                             <div class="customer-row">
-                                <input type="text" name="customer_name" placeholder="Customer Name" required>
-                                <input type="text" class="id-chip" placeholder="ID: #####" aria-label="Customer ID" disabled>
-                                <button type="button" class="icon-btn icon-btn--view" id="openSelectCustomer" aria-label="Select customer">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M10 17L14 21L22 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <path d="M20 21H4C2.89543 21 2 20.1046 2 19V5C2 3.89543 2.89543 3 4 3H13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                <input type="text" id="order-customer-name" name="customer_name" placeholder="Customer Name" required>
+                                <input type="text" id="order-customer-id" class="id-chip" placeholder="ID: #####" aria-label="Customer ID" disabled>
+                                <button type="button" class="icon-btn icon-btn--search" id="openSelectCustomer" aria-label="Select customer">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/>
+                                        <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                                     </svg>
                                 </button>
                             </div>
                         </label>
+
                         <div class="field field--full">
-                            <span>Items</span>
-                            <textarea name="items" rows="3" placeholder="Example: 2x Cappuccino ($4.75), 1x Latte ($4.50)" required></textarea>
+                            <span>Items:</span>
+                            <button type="button" class="add-item-btn" id="addOrderItemBtn">Add Item</button>
+                            <div class="order-items-box">
+                                <table class="items-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>ID</th>
+                                            <th>Quantity</th>
+                                            <th>Price</th>
+                                            <th>Total</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="6" class="items-empty-row"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <datalist id="order-item-options">
+                                <?php foreach ($menuCatalog as $menuItem): ?>
+                                    <option value="<?php echo htmlspecialchars($menuItem['name']); ?>"></option>
+                                <?php endforeach; ?>
+                            </datalist>
+                            <textarea class="order-items-hidden" name="items" rows="3" placeholder="Example: 2x Cappuccino ($4.75), 1x Latte ($4.50)" required></textarea>
                         </div>
-                        <label class="field">
-                            <span>Total</span>
+
+                        <label class="field field--half">
+                            <span>Total:</span>
                             <input type="number" name="total" step="0.01" min="0.01" placeholder="Total Amount" required>
                         </label>
-                        <label class="field">
-                            <span>Status</span>
+
+                        <label class="field field--full">
+                            <span>Status:</span>
                             <select name="status">
                                 <option>Pending</option>
                                 <option>Processing</option>
@@ -396,24 +598,25 @@ if ($conn && $conn instanceof mysqli) {
                             </select>
                         </label>
                     </div>
+
                     <div class="modal-actions">
                         <button type="button" class="btn btn--ghost" id="cancelOrderModal">Cancel</button>
-                        <button type="submit" class="btn btn--primary" name="add_order" value="1">Add Order</button>
+                        <button type="submit" class="btn btn--danger-submit" name="add_order" value="1">Add Order</button>
                     </div>
                 </form>
             </dialog>
 
             <dialog id="selectCustomerModal" class="orders-modal orders-modal--wide">
-                <div class="orders-modal__card">
-                    <header class="orders-modal__header">
+                <div class="orders-modal__card select-customer-card">
+                    <header class="orders-modal__header select-customer-header">
                         <h3>Select Customer</h3>
-                        <button type="button" class="close-btn" id="closeSelectCustomer" aria-label="Close select customer dialog">×</button>
+                        <button type="button" class="close-btn" id="closeSelectCustomer" aria-label="Close select customer dialog">&times;</button>
                     </header>
-                    <div class="field field--full">
-                        <input type="search" placeholder="Search customers..." aria-label="Search customers">
+                    <div class="field field--full select-customer-search">
+                        <input type="search" id="select-customer-search-input" placeholder="Search customers..." aria-label="Search customers">
                     </div>
                     <div class="customers-list">
-                        <table>
+                        <table id="select-customer-table">
                             <thead>
                                 <tr>
                                     <th>ID</th>
@@ -423,16 +626,8 @@ if ($conn && $conn instanceof mysqli) {
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php
-                                $customers = [
-                                    ['id' => 87, 'name' => 'Test Name', 'email' => 'test@mail.com', 'phone' => '111 222 333'],
-                                    ['id' => 85, 'name' => 'Marcus Johnson', 'email' => 'mjohnson.business@email.net', 'phone' => '(617) 555-9021'],
-                                    ['id' => 84, 'name' => "William O'Connor", 'email' => 'woconnor55@email.net', 'phone' => '(702) 555-1234'],
-                                    ['id' => 83, 'name' => 'Maria Sanchez', 'email' => 'msanchez.2024@email.com', 'phone' => '(512) 555-4567'],
-                                    ['id' => 82, 'name' => 'David Kim', 'email' => 'dkim_personal@email.com', 'phone' => '(404) 555-8901'],
-                                ];
-                                foreach ($customers as $c): ?>
-                                    <tr>
+                                <?php foreach ($customerOptions as $c): ?>
+                                    <tr class="select-customer-row" data-id="<?php echo (int) $c['id']; ?>" data-name="<?php echo htmlspecialchars($c['name'], ENT_QUOTES); ?>">
                                         <td><?php echo $c['id']; ?></td>
                                         <td><?php echo htmlspecialchars($c['name']); ?></td>
                                         <td><?php echo htmlspecialchars($c['email']); ?></td>
@@ -443,8 +638,8 @@ if ($conn && $conn instanceof mysqli) {
                         </table>
                     </div>
                     <div class="modal-actions">
-                        <button type="button" class="btn btn--ghost" id="cancelSelectCustomer">Cancel</button>
-                        <button type="button" class="btn btn--primary">Select Customer</button>
+                        <button type="button" class="btn btn--danger-submit" id="cancelSelectCustomer">Cancel</button>
+                        <button type="button" class="btn btn--primary" id="confirmSelectCustomer">Select Customer</button>
                     </div>
                 </div>
             </dialog>
@@ -499,6 +694,7 @@ if ($conn && $conn instanceof mysqli) {
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
+window.menuItemCatalog = <?php echo json_encode($menuCatalog, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
 window.ordersStatusData = {
     labels: ['Pending', 'Processing', 'Completed', 'Cancelled'],
     values: [
@@ -516,8 +712,4 @@ window.ordersStatusData = {
 <script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 </html>
-
-
-
-
 

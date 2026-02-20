@@ -33,6 +33,39 @@ if ($dbReady) {
         )"
     );
 
+    $seedCountResult = $conn->query("SELECT COUNT(*) AS total FROM customers");
+    $seedCustomerCount = 0;
+    if ($seedCountResult) {
+        $seedCountRow = $seedCountResult->fetch_assoc();
+        $seedCustomerCount = (int) ($seedCountRow['total'] ?? 0);
+        $seedCountResult->free();
+    }
+
+    if ($seedCustomerCount === 0) {
+        $seedCustomers = [
+            ['Marcus Johnson', 'mjohnson.business@email.net', '(617) 555-9021', '463 Commonwealth Ave, Boston, MA', 18],
+            ['William O\'Connor', 'woconnor55@email.net', '(702) 555-1234', '567 Desert Palm Dr, Las Vegas, NV', 26],
+            ['Maria Sanchez', 'msanchez.2024@email.com', '(512) 555-4567', '3201 River Road, Austin, TX', 20],
+            ['David Kim', 'dkim_personal@email.com', '(404) 555-8901', '1245 Peachtree St, Atlanta, GA', 12],
+            ['Amanda Peterson', 'apeterson91@gmail.com', '(010) 789-0123', '587 Elm St, Seattle, WA', 1],
+            ['Juanito M. Ramos II', 'juanitoramos113@gmail.com', '09082611230', 'Block 26 Lot 11, Goodwill Homes 1, San Bartolome', 0]
+        ];
+
+        $seedStmt = $conn->prepare('INSERT INTO customers (name, email, phone, address, orders_count) VALUES (?, ?, ?, ?, ?)');
+        if ($seedStmt) {
+            foreach ($seedCustomers as $seed) {
+                $seedName = $seed[0];
+                $seedEmail = $seed[1];
+                $seedPhone = $seed[2];
+                $seedAddress = $seed[3];
+                $seedOrders = (int) $seed[4];
+                $seedStmt->bind_param('ssssi', $seedName, $seedEmail, $seedPhone, $seedAddress, $seedOrders);
+                $seedStmt->execute();
+            }
+            $seedStmt->close();
+        }
+    }
+
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty(trim($_POST['id'] ?? ''))) {
         $name = trim($_POST['full_name'] ?? '');
         $email = trim($_POST['email'] ?? '');
