@@ -36,7 +36,7 @@ if ($dbReady) {
     );
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_menu_item'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_menu_item']) && empty($_POST['item_id'])) {
     $nameValue = trim($_POST['name'] ?? '');
     $priceValue = trim($_POST['price'] ?? '');
     $descriptionValue = trim($_POST['description'] ?? '');
@@ -290,7 +290,7 @@ if ($conn && $conn instanceof mysqli) {
 
             <div class="menu-grid">
                 <?php if (empty($menuItems)): ?>
-                    <article class="menu-card">
+                    <article class="menu-card js-empty-menu-state">
                         <div class="menu-card__body">
                             <div class="menu-card__meta">
                                 <h3>No menu items yet</h3>
@@ -328,13 +328,14 @@ if ($conn && $conn instanceof mysqli) {
                                             </svg>
                                         </button>
 
-                                        <button
-                                            type="button"
-                                            class="icon-btn icon-btn--delete js-delete-item"
-                                            aria-label="Delete item"
-                                            data-id="<?php echo $hasId ? (int) $item['id'] : ''; ?>"
-                                            <?php echo $hasId ? '' : 'disabled title="Demo item cannot be deleted"'; ?>
-                                        >
+                                    <button
+                                        type="button"
+                                        class="icon-btn icon-btn--delete js-delete-item"
+                                        aria-label="Delete item"
+                                        data-id="<?php echo $hasId ? (int) $item['id'] : ''; ?>"
+                                        data-name="<?php echo htmlspecialchars($item['name'], ENT_QUOTES); ?>"
+                                        <?php echo $hasId ? '' : 'disabled title="Demo item cannot be deleted"'; ?>
+                                    >
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                 <path d="M6 7H18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                                                 <path d="M10 11V17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
@@ -393,6 +394,27 @@ if ($conn && $conn instanceof mysqli) {
                         <button type="submit" class="btn btn--primary" name="add_menu_item" id="menu-submit-btn">Add Item</button>
                     </div>
                 </form>
+            </dialog>
+
+            <dialog id="menu-delete-modal" class="menu-delete-modal" aria-labelledby="menu-delete-title">
+                <div class="menu-delete-modal__card">
+                    <header class="menu-delete-modal__header">
+                        <h3 id="menu-delete-title">Confirm Delete</h3>
+                        <button type="button" class="menu-delete-modal__close" id="close-menu-delete-modal" aria-label="Close delete confirmation">&times;</button>
+                    </header>
+                    <p class="menu-delete-modal__text">
+                        This action cannot be undone. Deleting <strong id="menu-delete-item-name">this item</strong> will:
+                    </p>
+                    <ul class="menu-delete-modal__list">
+                        <li>Remove it from the menu permanently</li>
+                        <li>Mark it as unavailable in related order records</li>
+                        <li>Prevent it from being added to new orders</li>
+                    </ul>
+                    <div class="menu-delete-modal__actions">
+                        <button type="button" class="btn btn--danger-lite" id="cancel-menu-delete">Cancel</button>
+                        <button type="button" class="btn btn--info" id="confirm-menu-delete">Confirm</button>
+                    </div>
+                </div>
             </dialog>
         </section>
     </main>

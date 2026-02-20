@@ -11,9 +11,42 @@ document.addEventListener("DOMContentLoaded", () => {
   const modalTitle = document.getElementById("menu-modal-title");
   const submitBtn = document.getElementById("menu-submit-btn");
   const itemIdInput = document.getElementById("menu-item-id");
+  const deleteModal = document.getElementById("menu-delete-modal");
+  const closeDeleteModalBtn = document.getElementById("close-menu-delete-modal");
+  const cancelDeleteBtn = document.getElementById("cancel-menu-delete");
+  const confirmDeleteBtn = document.getElementById("confirm-menu-delete");
+  const deleteItemName = document.getElementById("menu-delete-item-name");
   const nameInput = form?.querySelector('input[name="name"]');
   const priceInput = form?.querySelector('input[name="price"]');
   const descInput = form?.querySelector('textarea[name="description"]');
+  const menuGrid = document.querySelector(".menu-grid");
+  let pendingDeleteResolver = null;
+
+  const syncEmptyMenuState = () => {
+    if (!menuGrid) return;
+
+    const realCards = menuGrid.querySelectorAll(".menu-card:not(.js-empty-menu-state)");
+    const emptyCard = menuGrid.querySelector(".js-empty-menu-state");
+
+    if (realCards.length === 0 && !emptyCard) {
+      const empty = document.createElement("article");
+      empty.className = "menu-card js-empty-menu-state";
+      empty.innerHTML = `
+        <div class="menu-card__body">
+          <div class="menu-card__meta">
+            <h3>No menu items yet</h3>
+          </div>
+          <p class="menu-card__description">Click the + button to add your first menu item.</p>
+        </div>
+      `;
+      menuGrid.appendChild(empty);
+      return;
+    }
+
+    if (realCards.length > 0 && emptyCard) {
+      emptyCard.remove();
+    }
+  };
 
   const parseJsonResponse = async (res) => {
     const raw = await res.text();
@@ -38,6 +71,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const openModal = () => modal?.showModal();
   const closeModalDialog = () => modal?.close();
+  const closeDeleteModal = () => deleteModal?.close();
+
+  const confirmDeleteDialog = (itemName = "this item") =>
+    new Promise((resolve) => {
+      if (!deleteModal) {
+        resolve(true);
+        return;
+      }
+
+      if (deleteItemName) {
+        deleteItemName.textContent = itemName.trim() || "this item";
+      }
+
+      pendingDeleteResolver = resolve;
+      deleteModal.showModal();
+    });
 
   fab?.addEventListener("click", () => {
     resetToAddMode();
@@ -49,7 +98,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (deleteBtn) {
       const id = deleteBtn.dataset.id;
       if (!id) return;
-      const shouldDelete = await (window.showAppConfirm?.("Delete this menu item?", "Delete Item") ?? Promise.resolve(true));
+      const itemName = deleteBtn.dataset.name || "this item";
+      const shouldDelete = await confirmDeleteDialog(itemName);
       if (!shouldDelete) return;
 
       const fd = new FormData();
@@ -65,6 +115,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const card = deleteBtn.closest(".menu-card");
       if (card) card.remove();
+      syncEmptyMenuState();
+      window.showAppNotice?.("Menu item deleted successfully.", "success", "Success");
       return;
     }
 
@@ -116,6 +168,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
   closeModal?.addEventListener("click", closeModalDialog);
   cancelBtn?.addEventListener("click", closeModalDialog);
+  closeDeleteModalBtn?.addEventListener("click", () => {
+    closeDeleteModal();
+    pendingDeleteResolver?.(false);
+    pendingDeleteResolver = null;
+  });
+  cancelDeleteBtn?.addEventListener("click", () => {
+    closeDeleteModal();
+    pendingDeleteResolver?.(false);
+    pendingDeleteResolver = null;
+  });
+  confirmDeleteBtn?.addEventListener("click", () => {
+    closeDeleteModal();
+    pendingDeleteResolver?.(true);
+    pendingDeleteResolver = null;
+  });
+  deleteModal?.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeDeleteModal();
+    pendingDeleteResolver?.(false);
+    pendingDeleteResolver = null;
+  });
 
   form?.addEventListener("submit", () => {
     if (modal) {
@@ -166,4 +239,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+  syncEmptyMenuState();
 });
