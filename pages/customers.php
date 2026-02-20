@@ -8,8 +8,15 @@ $initial = strtoupper(substr($username, 0, 1));
 $customers = [];
 $stats = [
     'totalCustomers' => 0,
-    'revenuePerCustomer' => 63.64,
-    'customersPerDay' => 4.67
+    'revenuePerCustomer' => 0.0,
+    'customersPerDay' => 0.0
+];
+$spendingDistribution = [
+    '$0-$20' => 0,
+    '$20-$50' => 0,
+    '$50-$100' => 0,
+    'No Spending' => 0,
+    'Over $100' => 0
 ];
 $perPage = 3;
 $currentPage = isset($_GET['page']) ? (int) $_GET['page'] : 1;
@@ -32,39 +39,6 @@ if ($dbReady) {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )"
     );
-
-    $seedCountResult = $conn->query("SELECT COUNT(*) AS total FROM customers");
-    $seedCustomerCount = 0;
-    if ($seedCountResult) {
-        $seedCountRow = $seedCountResult->fetch_assoc();
-        $seedCustomerCount = (int) ($seedCountRow['total'] ?? 0);
-        $seedCountResult->free();
-    }
-
-    if ($seedCustomerCount === 0) {
-        $seedCustomers = [
-            ['Marcus Johnson', 'mjohnson.business@email.net', '(617) 555-9021', '463 Commonwealth Ave, Boston, MA', 18],
-            ['William O\'Connor', 'woconnor55@email.net', '(702) 555-1234', '567 Desert Palm Dr, Las Vegas, NV', 26],
-            ['Maria Sanchez', 'msanchez.2024@email.com', '(512) 555-4567', '3201 River Road, Austin, TX', 20],
-            ['David Kim', 'dkim_personal@email.com', '(404) 555-8901', '1245 Peachtree St, Atlanta, GA', 12],
-            ['Amanda Peterson', 'apeterson91@gmail.com', '(010) 789-0123', '587 Elm St, Seattle, WA', 1],
-            ['Juanito M. Ramos II', 'juanitoramos113@gmail.com', '09082611230', 'Block 26 Lot 11, Goodwill Homes 1, San Bartolome', 0]
-        ];
-
-        $seedStmt = $conn->prepare('INSERT INTO customers (name, email, phone, address, orders_count) VALUES (?, ?, ?, ?, ?)');
-        if ($seedStmt) {
-            foreach ($seedCustomers as $seed) {
-                $seedName = $seed[0];
-                $seedEmail = $seed[1];
-                $seedPhone = $seed[2];
-                $seedAddress = $seed[3];
-                $seedOrders = (int) $seed[4];
-                $seedStmt->bind_param('ssssi', $seedName, $seedEmail, $seedPhone, $seedAddress, $seedOrders);
-                $seedStmt->execute();
-            }
-            $seedStmt->close();
-        }
-    }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty(trim($_POST['id'] ?? ''))) {
         $name = trim($_POST['full_name'] ?? '');
@@ -101,6 +75,65 @@ if ($dbReady) {
     }
 
     $stats['totalCustomers'] = $totalCustomers;
+
+    $ordersTableResult = $conn->query("SHOW TABLES LIKE 'orders'");
+    $hasOrdersTable = $ordersTableResult && $ordersTableResult->num_rows > 0;
+    if ($ordersTableResult) {
+        $ordersTableResult->free();
+    }
+
+    if ($hasOrdersTable) {
+        $revenueResult = $conn->query("SELECT COALESCE(SUM(total), 0) AS total_revenue FROM orders");
+        $totalRevenue = 0.0;
+        if ($revenueResult) {
+            $revenueRow = $revenueResult->fetch_assoc();
+            $totalRevenue = (float) ($revenueRow['total_revenue'] ?? 0);
+            $revenueResult->free();
+        }
+        $stats['revenuePerCustomer'] = $totalCustomers > 0 ? ($totalRevenue / $totalCustomers) : 0.0;
+    }
+
+    $dateSpanResult = $conn->query("
+        SELECT
+            MIN(DATE(created_at)) AS first_day,
+            MAX(DATE(created_at)) AS last_day
+        FROM customers
+    ");
+    if ($dateSpanResult) {
+        $dateSpanRow = $dateSpanResult->fetch_assoc();
+        $dateSpanResult->free();
+        if (!empty($dateSpanRow['first_day']) && !empty($dateSpanRow['last_day'])) {
+            $first = new DateTime($dateSpanRow['first_day']);
+            $last = new DateTime($dateSpanRow['last_day']);
+            $days = max(1, (int) $first->diff($last)->days + 1);
+            $stats['customersPerDay'] = $totalCustomers > 0 ? ($totalCustomers / $days) : 0.0;
+        }
+    }
+
+    $spendingQuery = $conn->query("
+        SELECT orders_count, COUNT(*) AS total
+        FROM customers
+        GROUP BY orders_count
+    ");
+    if ($spendingQuery) {
+        while ($bucketRow = $spendingQuery->fetch_assoc()) {
+            $ordersCount = (int) $bucketRow['orders_count'];
+            $bucketTotal = (int) $bucketRow['total'];
+            if ($ordersCount === 0) {
+                $spendingDistribution['No Spending'] += $bucketTotal;
+            } elseif ($ordersCount <= 5) {
+                $spendingDistribution['$0-$20'] += $bucketTotal;
+            } elseif ($ordersCount <= 12) {
+                $spendingDistribution['$20-$50'] += $bucketTotal;
+            } elseif ($ordersCount <= 20) {
+                $spendingDistribution['$50-$100'] += $bucketTotal;
+            } else {
+                $spendingDistribution['Over $100'] += $bucketTotal;
+            }
+        }
+        $spendingQuery->free();
+    }
+
     $totalPages = max(1, (int) ceil($totalCustomers / $perPage));
     if ($currentPage > $totalPages) {
         $currentPage = $totalPages;
@@ -442,6 +475,19 @@ if ($conn && $conn instanceof mysqli) {
     </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+window.customerSpendingData = {
+    labels: ['\$0-\$20', '\$20-\$50', '\$50-\$100', 'No Spending', 'Over \$100'],
+    counts: [
+        <?php echo (int) $spendingDistribution['$0-$20']; ?>,
+        <?php echo (int) $spendingDistribution['$20-$50']; ?>,
+        <?php echo (int) $spendingDistribution['$50-$100']; ?>,
+        <?php echo (int) $spendingDistribution['No Spending']; ?>,
+        <?php echo (int) $spendingDistribution['Over $100']; ?>
+    ],
+    colors: ['#6b35d9', '#e23c7e', '#f0b22f', '#2b90e0', '#28a56b']
+};
+</script>
 <script src="../assets/js/notify.js?v=<?php echo filemtime(__DIR__ . '/../assets/js/notify.js'); ?>"></script>
 <script src="../assets/js/custom/customers.js?v=<?php echo filemtime(__DIR__ . '/../assets/js/custom/customers.js'); ?>"></script>
 <script src="../assets/js/account-menu.js?v=<?php echo filemtime(__DIR__ . '/../assets/js/account-menu.js'); ?>"></script>

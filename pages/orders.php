@@ -39,39 +39,6 @@ if ($dbReady) {
         )"
     );
 
-    $customerCountResult = $conn->query("SELECT COUNT(*) AS total FROM customers");
-    $customerCount = 0;
-    if ($customerCountResult) {
-        $customerCountRow = $customerCountResult->fetch_assoc();
-        $customerCount = (int) ($customerCountRow['total'] ?? 0);
-        $customerCountResult->free();
-    }
-
-    if ($customerCount === 0) {
-        $seedCustomers = [
-            ['Juanito M. Ramos II', 'juanito@example.com', '09082611230', 'Block 26 Lot 11, Goodwill Homes 1, San Bartolome', 2],
-            ['Marcus Johnson', 'mjohnson.business@email.net', '(617) 555-9021', '463 Commonwealth Ave, Boston, MA', 18],
-            ['William O\'Connor', 'woconnor55@email.net', '(702) 555-1234', '567 Desert Palm Dr, Las Vegas, NV', 26],
-            ['Maria Sanchez', 'msanchez.2024@email.com', '(512) 555-4567', '3201 River Road, Austin, TX', 20],
-            ['David Kim', 'dkim_personal@email.com', '(404) 555-8901', '1245 Peachtree St, Atlanta, GA', 12],
-            ['Rachel Foster', 'rfoster.contact@email.com', '(503) 555-2345', '201 Waterfront St, Portland, OR', 1]
-        ];
-
-        $seedCustomerStmt = $conn->prepare("INSERT INTO customers (name, email, phone, address, orders_count) VALUES (?, ?, ?, ?, ?)");
-        if ($seedCustomerStmt) {
-            foreach ($seedCustomers as $seedCustomer) {
-                $seedCustomerName = $seedCustomer[0];
-                $seedCustomerEmail = $seedCustomer[1];
-                $seedCustomerPhone = $seedCustomer[2];
-                $seedCustomerAddress = $seedCustomer[3];
-                $seedCustomerOrders = (int) $seedCustomer[4];
-                $seedCustomerStmt->bind_param('ssssi', $seedCustomerName, $seedCustomerEmail, $seedCustomerPhone, $seedCustomerAddress, $seedCustomerOrders);
-                $seedCustomerStmt->execute();
-            }
-            $seedCustomerStmt->close();
-        }
-    }
-
     $customerListResult = $conn->query("SELECT id, name, email, phone FROM customers ORDER BY id DESC");
     if ($customerListResult) {
         while ($customerRow = $customerListResult->fetch_assoc()) {
@@ -119,42 +86,6 @@ if ($dbReady) {
         $menuResult->free();
     }
 
-    // Seed a starter catalog when menu is empty so order item mapping works out of the box.
-    if (empty($menuCatalog)) {
-        $seedItems = [
-            ['Black Coffee', 4.25, 'Bold brewed coffee with a smooth finish.', 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80'],
-            ['Cappuccino', 4.75, 'Equal parts espresso, steamed milk, and foam.', 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1200&q=80'],
-            ['Latte', 4.50, 'Creamy steamed milk over a rich espresso shot.', 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=1200&q=80'],
-            ['Mocha', 5.10, 'Espresso, chocolate, and steamed milk harmony.', 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80'],
-            ['Americano', 3.95, 'Espresso diluted with hot water for a clean, bold cup.', 'https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=1200&q=80'],
-            ['Flat White', 4.85, 'Velvety microfoam over double espresso.', 'https://images.unsplash.com/photo-1510627498534-cf7e9002facc?auto=format&fit=crop&w=1200&q=80']
-        ];
-
-        $seedStmt = $conn->prepare("INSERT INTO menu_items (name, price, description, image_path) VALUES (?, ?, ?, ?)");
-        if ($seedStmt) {
-            foreach ($seedItems as $seed) {
-                $seedName = $seed[0];
-                $seedPrice = (float) $seed[1];
-                $seedDesc = $seed[2];
-                $seedImage = $seed[3];
-                $seedStmt->bind_param('sdss', $seedName, $seedPrice, $seedDesc, $seedImage);
-                $seedStmt->execute();
-            }
-            $seedStmt->close();
-        }
-
-        $menuResult = $conn->query("SELECT id, name, price FROM menu_items ORDER BY name ASC");
-        if ($menuResult) {
-            while ($row = $menuResult->fetch_assoc()) {
-                $menuCatalog[] = [
-                    'id' => (int) $row['id'],
-                    'name' => $row['name'],
-                    'price' => (float) $row['price']
-                ];
-            }
-            $menuResult->free();
-        }
-    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_order'])) {

@@ -129,11 +129,15 @@ document.addEventListener("DOMContentLoaded", () => {
   // Chart: spending distribution
   const spendingCtx = document.getElementById("spendingChart");
   const legend = document.getElementById("spendingLegend");
-  const spendingData = {
+  const spendingData = window.customerSpendingData || {
     labels: ["$0-$20", "$20-$50", "$50-$100", "No Spending", "Over $100"],
-    values: [18.8, 31.2, 18.8, 12.5, 18.8],
+    counts: [0, 0, 0, 0, 0],
     colors: ["#6b35d9", "#e23c7e", "#f0b22f", "#2b90e0", "#28a56b"],
   };
+  const totalCustomersFromBuckets = spendingData.counts.reduce((sum, value) => sum + Number(value || 0), 0);
+  const spendingPercents = spendingData.counts.map((value) =>
+    totalCustomersFromBuckets > 0 ? (Number(value || 0) / totalCustomersFromBuckets) * 100 : 0
+  );
 
   const syncInsightsHeight = () => {
     const leftCard = document.querySelector(".customers-insights .insight-card.chart-card");
@@ -155,7 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
         labels: spendingData.labels,
         datasets: [
           {
-            data: spendingData.values,
+            data: spendingPercents,
             backgroundColor: spendingData.colors,
             borderWidth: 0,
           },
@@ -177,7 +181,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <span class="legend-dot" style="background:${spendingData.colors[idx]}"></span>
             ${label}
           </span>
-          <span class="legend-value">${spendingData.values[idx]}%</span>
+          <span class="legend-value">${spendingPercents[idx].toFixed(1)}%</span>
         </div>`
       )
       .join("");

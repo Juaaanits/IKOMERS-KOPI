@@ -20,36 +20,6 @@ if ($dbReady) {
         )"
     );
 
-    $countResult = $conn->query("SELECT COUNT(*) AS total FROM system_users");
-    $totalUsers = 0;
-    if ($countResult) {
-        $countRow = $countResult->fetch_assoc();
-        $totalUsers = (int) ($countRow['total'] ?? 0);
-        $countResult->free();
-    }
-
-    if ($totalUsers === 0) {
-        $seedUsers = [
-            ['Admin Name', '221BCP@mail.com', 'admin123', '2222 999 555 888', 'Admin'],
-            ['Bla Bla Test', 'sssss@mail.com', 'user12345', '9999 6666 55555', 'User'],
-            ['Test Name', 'test@mail.com', 'test12345', '111 222 888', 'User']
-        ];
-
-        $seedStmt = $conn->prepare("INSERT INTO system_users (fullname, email, password, phone, role) VALUES (?, ?, ?, ?, ?)");
-        if ($seedStmt) {
-            foreach ($seedUsers as $seedUser) {
-                $seedFullname = $seedUser[0];
-                $seedEmail = $seedUser[1];
-                $seedPassword = $seedUser[2];
-                $seedPhone = $seedUser[3];
-                $seedRole = $seedUser[4];
-                $seedStmt->bind_param('sssss', $seedFullname, $seedEmail, $seedPassword, $seedPhone, $seedRole);
-                $seedStmt->execute();
-            }
-            $seedStmt->close();
-        }
-    }
-
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_user'])) {
         $fullname = trim($_POST['fullname'] ?? '');
         $email = trim($_POST['email'] ?? '');

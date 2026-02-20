@@ -1,8 +1,155 @@
 <?php
 require_once '../includes/require_admin.php';
+require_once '../includes/db.php';
 
 $username = $_SESSION['username'] ?? 'User';
 $initial = strtoupper(substr($username, 0, 1));
+
+$metrics = [
+    'totalSales' => 0.0,
+    'totalOrders' => 0,
+    'totalCustomers' => 0,
+    'avgOrderValue' => 0.0
+];
+$statusCounts = [
+    'Pending' => 0,
+    'Processing' => 0,
+    'Completed' => 0,
+    'Cancelled' => 0
+];
+$popularItems = [];
+$recentOrders = [];
+
+$dbReady = $conn && $conn instanceof mysqli && $conn->connect_errno === 0;
+
+if ($dbReady) {
+    $conn->query(
+        "CREATE TABLE IF NOT EXISTS customers (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(120) NOT NULL,
+            email VARCHAR(190) NOT NULL,
+            phone VARCHAR(40) NOT NULL,
+            address VARCHAR(255) DEFAULT '',
+            orders_count INT UNSIGNED NOT NULL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )"
+    );
+
+    $conn->query(
+        "CREATE TABLE IF NOT EXISTS orders (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            customer_name VARCHAR(120) NOT NULL,
+            items TEXT NOT NULL,
+            total DECIMAL(10,2) NOT NULL,
+            status ENUM('Pending','Processing','Completed','Cancelled') NOT NULL DEFAULT 'Pending',
+            ordered_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )"
+    );
+
+    $conn->query(
+        "CREATE TABLE IF NOT EXISTS menu_items (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(120) NOT NULL,
+            price DECIMAL(10,2) NOT NULL,
+            description TEXT NULL,
+            image_path VARCHAR(255) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )"
+    );
+
+    $metricQuery = $conn->query(
+        "SELECT
+            COALESCE(SUM(total), 0) AS total_sales,
+            COUNT(*) AS total_orders,
+            COALESCE(AVG(total), 0) AS avg_order_value
+         FROM orders"
+    );
+    if ($metricQuery) {
+        $metricRow = $metricQuery->fetch_assoc();
+        $metrics['totalSales'] = (float) ($metricRow['total_sales'] ?? 0);
+        $metrics['totalOrders'] = (int) ($metricRow['total_orders'] ?? 0);
+        $metrics['avgOrderValue'] = (float) ($metricRow['avg_order_value'] ?? 0);
+        $metricQuery->free();
+    }
+
+    $customerCountQuery = $conn->query("SELECT COUNT(*) AS total_customers FROM customers");
+    if ($customerCountQuery) {
+        $customerCountRow = $customerCountQuery->fetch_assoc();
+        $metrics['totalCustomers'] = (int) ($customerCountRow['total_customers'] ?? 0);
+        $customerCountQuery->free();
+    }
+
+    $statusQuery = $conn->query("SELECT status, COUNT(*) AS total FROM orders GROUP BY status");
+    if ($statusQuery) {
+        while ($statusRow = $statusQuery->fetch_assoc()) {
+            $statusName = $statusRow['status'];
+            if (isset($statusCounts[$statusName])) {
+                $statusCounts[$statusName] = (int) $statusRow['total'];
+            }
+        }
+        $statusQuery->free();
+    }
+
+    $recentOrderQuery = $conn->query("SELECT id, customer_name, items, total, status FROM orders ORDER BY id DESC LIMIT 5");
+    if ($recentOrderQuery) {
+        while ($orderRow = $recentOrderQuery->fetch_assoc()) {
+            $recentOrders[] = [
+                'id' => (int) $orderRow['id'],
+                'customer' => $orderRow['customer_name'],
+                'items' => $orderRow['items'],
+                'total' => (float) $orderRow['total'],
+                'status' => $orderRow['status']
+            ];
+        }
+        $recentOrderQuery->free();
+    }
+
+    $itemCounts = [];
+    $orderItemsQuery = $conn->query("SELECT items FROM orders");
+    if ($orderItemsQuery) {
+        while ($itemsRow = $orderItemsQuery->fetch_assoc()) {
+            $rawItems = trim((string) ($itemsRow['items'] ?? ''));
+            if ($rawItems === '') {
+                continue;
+            }
+
+            $tokens = array_filter(array_map('trim', explode(',', $rawItems)));
+            foreach ($tokens as $token) {
+                if (preg_match('/^(\d+)\s*x\s*(.+?)\s*\(\$?[\d.]+\)$/i', $token, $match)) {
+                    $qty = max(1, (int) $match[1]);
+                    $name = trim($match[2]);
+                } else {
+                    $qty = 1;
+                    $name = trim(preg_replace('/\s*\(\$?[\d.]+\)\s*/', '', $token));
+                }
+
+                if ($name === '') {
+                    continue;
+                }
+
+                if (!isset($itemCounts[$name])) {
+                    $itemCounts[$name] = 0;
+                }
+                $itemCounts[$name] += $qty;
+            }
+        }
+        $orderItemsQuery->free();
+    }
+
+    arsort($itemCounts);
+    $popularItems = array_slice($itemCounts, 0, 5, true);
+
+    if ($conn && $conn instanceof mysqli) {
+        $conn->close();
+    }
+}
+
+$popularLabels = array_values(array_map('strval', array_keys($popularItems)));
+$popularValues = array_values(array_map('intval', array_values($popularItems)));
+if (empty($popularLabels)) {
+    $popularLabels = ['No items yet'];
+    $popularValues = [0];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -117,23 +264,22 @@ $initial = strtoupper(substr($username, 0, 1));
             <div class="under-header">
                 <div class="cards">
                     <p>Total Sales</p>
-                    <h3>$869.0</h3>
+                    <h3>$<?php echo number_format($metrics['totalSales'], 2); ?></h3>
                 </div>
                 <div class="cards">
                     <p>Orders</p>
-                    <h3>131</h3>
+                    <h3><?php echo (int) $metrics['totalOrders']; ?></h3>
                 </div>
                 <div class="cards">
                     <p>Customers</p>
-                    <h3>16</h3>
+                    <h3><?php echo (int) $metrics['totalCustomers']; ?></h3>
                 </div>
                 <div class="cards">
                     <p>Avg. Order Value</p>
-                    <h3>$6.90</h3>
+                    <h3>$<?php echo number_format($metrics['avgOrderValue'], 2); ?></h3>
                 </div>
             </div>
-            
-            <!-- Second row: Orders status + Popular items -->
+
             <div class="graph-container">
                 <div class="graph-card chart-card">
                     <header class="chart-card__header">
@@ -144,7 +290,7 @@ $initial = strtoupper(substr($username, 0, 1));
                         <div class="chart-area">
                             <canvas id="orderStatusChart" class="chart-canvas" aria-label="Order status chart"></canvas>
                             <div class="chart-center-label">
-                                <div id="orderStatusTotal" class="chart-center-value">131</div>
+                                <div id="orderStatusTotal" class="chart-center-value"><?php echo (int) $metrics['totalOrders']; ?></div>
                                 <div class="chart-center-caption">Total Orders</div>
                             </div>
                         </div>
@@ -160,8 +306,6 @@ $initial = strtoupper(substr($username, 0, 1));
                 </div>
             </div>
 
-
-            <!-- Third row: Recent Orders -->
             <div class="recent-orders-container">
                 <h3>Recent Orders</h3>
                 <table class="recent-orders">
@@ -175,21 +319,22 @@ $initial = strtoupper(substr($username, 0, 1));
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>#101</td>
-                            <td>John Doe</td>
-                            <td>1x Cappuccino ($4.75)</td>
-                            <td>$4.75</td>
-                            <td><span class="status-pill status-pill--completed">Completed</span></td>
-                        </tr>
-                        <tr>
-                            <td>#102</td>
-                            <td>Jane Smith</td>
-                            <td>22x Americano ($3.75)</td>
-                            <td>$82.50</td>
-                            <td><span class="status-pill status-pill--pending">Pending</span></td>
-                        </tr>
-                        <!-- Add more rows -->
+                        <?php if (empty($recentOrders)): ?>
+                            <tr>
+                                <td colspan="5">No orders yet.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($recentOrders as $order): ?>
+                                <?php $statusClass = strtolower($order['status']); ?>
+                                <tr>
+                                    <td>#<?php echo (int) $order['id']; ?></td>
+                                    <td><?php echo htmlspecialchars($order['customer']); ?></td>
+                                    <td><?php echo htmlspecialchars($order['items']); ?></td>
+                                    <td>$<?php echo number_format((float) $order['total'], 2); ?></td>
+                                    <td><span class="status-pill status-pill--<?php echo $statusClass; ?>"><?php echo htmlspecialchars($order['status']); ?></span></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -198,17 +343,34 @@ $initial = strtoupper(substr($username, 0, 1));
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-    // Orders status doughnut
-    const orderStatusData = {
+window.dashboardData = {
+    orderStatus: {
         labels: ['Pending', 'Processing', 'Completed', 'Cancelled'],
-        counts: [54, 30, 42, 5],
+        counts: [
+            <?php echo (int) $statusCounts['Pending']; ?>,
+            <?php echo (int) $statusCounts['Processing']; ?>,
+            <?php echo (int) $statusCounts['Completed']; ?>,
+            <?php echo (int) $statusCounts['Cancelled']; ?>
+        ],
         colors: ['#4532d3', '#17b7b2', '#f16521', '#8d3cf0']
-    };
+    },
+    popularItems: {
+        labels: <?php echo json_encode($popularLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>,
+        counts: <?php echo json_encode($popularValues, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>,
+        colors: ['#5b6c87', '#c28462', '#6c7570', '#b28c73', '#7aa36f']
+    }
+};
 
+(function renderDashboardCharts() {
+    if (typeof Chart === 'undefined' || !window.dashboardData) {
+        return;
+    }
+
+    const orderStatusData = window.dashboardData.orderStatus;
     const orderStatusCtx = document.getElementById('orderStatusChart');
     const orderStatusTotalEl = document.getElementById('orderStatusTotal');
+
     if (orderStatusCtx) {
-        // Trigger CSS spin on the donut only (center label stays static)
         orderStatusCtx.classList.remove('chart-canvas--spin');
         void orderStatusCtx.offsetWidth;
         orderStatusCtx.classList.add('chart-canvas--spin');
@@ -226,40 +388,8 @@ $initial = strtoupper(substr($username, 0, 1));
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                animation: {
-                    animateRotate: true,
-                    animateScale: true,
-                    duration: 900,
-                    easing: 'easeOutCubic'
-                },
-                animations: {
-                    rotation: {
-                        from: -4 * Math.PI,
-                        to: 0,
-                        duration: 900,
-                        easing: 'easeOutCubic'
-                    },
-                    circumference: {
-                        from: 0,
-                        to: 2 * Math.PI,
-                        duration: 900,
-                        easing: 'easeOutCubic'
-                    },
-                    radius: {
-                        from: 0,
-                        duration: 650,
-                        easing: 'easeOutBack'
-                    }
-                },
                 cutout: '72%',
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => `${ctx.label}: ${ctx.parsed} (${((ctx.parsed / ctx.chart._metasets[0].total) * 100).toFixed(1)}%)`
-                        }
-                    }
-                }
+                plugins: { legend: { display: false } }
             }
         });
 
@@ -270,8 +400,8 @@ $initial = strtoupper(substr($username, 0, 1));
         const legend = document.getElementById('order-status-legend');
         if (legend) {
             legend.innerHTML = orderStatusData.labels.map((label, idx) => {
-                const count = orderStatusData.counts[idx];
-                const pct = ((count / totalOrders) * 100).toFixed(1);
+                const count = Number(orderStatusData.counts[idx] || 0);
+                const pct = totalOrders > 0 ? ((count / totalOrders) * 100).toFixed(1) : '0.0';
                 return `<div class="legend-item">
                             <span class="legend-swatch" style="background:${orderStatusData.colors[idx]}"></span>
                             <span class="legend-label">${label}</span>
@@ -281,22 +411,17 @@ $initial = strtoupper(substr($username, 0, 1));
         }
     }
 
-    // Popular items bar chart
-    const popularItemsData = {
-        labels: ['Americano', 'Cappuccino', 'Black Coffee', 'Latte', 'Espresso'],
-        counts: [31, 18, 16, 15, 12],
-        colors: ['#5b6c87', '#c28462', '#6c7570', '#b28c73', '#7aa36f']
-    };
-
+    const popularItemsData = window.dashboardData.popularItems;
     const popularItemsCtx = document.getElementById('popularItemsChart');
     if (popularItemsCtx) {
+        const barColors = popularItemsData.labels.map((_, idx) => popularItemsData.colors[idx % popularItemsData.colors.length]);
         new Chart(popularItemsCtx, {
             type: 'bar',
             data: {
                 labels: popularItemsData.labels,
                 datasets: [{
                     data: popularItemsData.counts,
-                    backgroundColor: popularItemsData.colors,
+                    backgroundColor: barColors,
                     borderRadius: 10,
                     barPercentage: 0.8,
                     categoryPercentage: 0.8
@@ -314,21 +439,16 @@ $initial = strtoupper(substr($username, 0, 1));
                     y: {
                         beginAtZero: true,
                         grid: { color: '#e7dccd' },
-                        ticks: { color: '#6b5c52', stepSize: 5 },
-                        suggestedMax: 35
+                        ticks: { color: '#6b5c52', stepSize: 1 }
                     }
                 }
             }
         });
     }
+})();
 </script>
 <script src="../assets/js/notify.js?v=<?php echo filemtime(__DIR__ . '/../assets/js/notify.js'); ?>"></script>
 <script src="../assets/js/account-menu.js?v=<?php echo filemtime(__DIR__ . '/../assets/js/account-menu.js'); ?>"></script>
 <script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 </html>
-
-
-
-
-
