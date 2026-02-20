@@ -12,6 +12,7 @@ $initial = strtoupper(substr($username, 0, 1));
     <title>Dashboard | IKOMERS KOPI</title>
     <link rel="stylesheet" href="../assets/css/dashboard.css">
 </head>
+
 <body>
 <div class="dashboard-layout">
     <aside class="sidebar" aria-label="Main navigation">
@@ -93,12 +94,22 @@ $initial = strtoupper(substr($username, 0, 1));
 
     <main class="main-area" role="main">
         <header class="main-header">
-            <div>
+            <div class="main-header__title">
                 <h1>Dashboard</h1>
             </div>
-            <div class="account-pill">
-                <span>Hello, <?php echo htmlspecialchars($username); ?></span>
-                <span class="account-avatar"><?php echo htmlspecialchars($initial); ?></span>
+            <div class="account-menu">
+                <button class="account-trigger" id="account-trigger" type="button" aria-expanded="false" aria-controls="account-dropdown">
+                    <span>Hello, <?php echo htmlspecialchars($username); ?></span>
+                    <span class="account-avatar"><?php echo htmlspecialchars($initial); ?></span>
+                </button>
+
+                <div class="account-dropdown" id="account-dropdown" hidden>
+                    <div class="account-dropdown__head">
+                    <strong><?php echo htmlspecialchars($username); ?></strong>
+                    </div>
+                    <a href="users.php">My Profile</a>
+                    <a href="logout.php" class="danger">Sign Out</a>
+                </div>
             </div>
         </header>
 
@@ -311,6 +322,7 @@ $initial = strtoupper(substr($username, 0, 1));
         });
     }
 </script>
+<script src="../assets/js/account-menu.js"></script>
 <script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 </html>

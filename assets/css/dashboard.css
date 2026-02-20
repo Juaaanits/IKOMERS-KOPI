@@ -271,6 +271,70 @@ a:focus {
     font-weight: 500;
 }
 
+.account-menu {
+    position: relative;
+    margin-left: auto;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.account-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 220px;
+    background: #fff;
+    border: 1px solid #e8dccd;
+    border-radius: 12px;
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    z-index: 30;
+}
+
+.account-dropdown[hidden] {
+    display: none !important;
+}
+
+.account-dropdown__head {
+    padding: 12px 14px;
+    border-bottom: 1px solid #f0e6d9;
+}
+
+.account-dropdown a {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 11px 14px;
+    color: #2b241d;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.account-dropdown a:hover {
+    background: #f8f1e7;
+}
+
+.account-dropdown a.danger {
+    color: #c4473a;
+}
+
+.account-trigger {
+    all: unset;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+}
+
+.account-trigger:focus-visible {
+    outline: 2px solid rgba(74, 45, 26, 0.28);
+    outline-offset: 4px;
+}
+
+
 .account-avatar {
     width: 36px;
     height: 36px;
