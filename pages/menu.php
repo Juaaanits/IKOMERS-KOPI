@@ -11,13 +11,6 @@ $nameValue = '';
 $priceValue = '';
 $descriptionValue = '';
 
-$defaultMenuItems = [
-    ['name' => 'Black Coffee', 'price' => 4.25, 'description' => 'Bold brewed coffee with a smooth finish.', 'image' => 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=600&q=80'],
-    ['name' => 'Cappuccino', 'price' => 4.75, 'description' => 'Equal parts espresso, steamed milk, and foam.', 'image' => 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=600&q=80&sat=-40'],
-    ['name' => 'Latte', 'price' => 4.50, 'description' => 'Creamy steamed milk over a rich espresso shot.', 'image' => 'https://images.unsplash.com/photo-1510626176961-4b37d0b4e904?auto=format&fit=crop&w=600&q=80'],
-    ['name' => 'Mocha', 'price' => 5.10, 'description' => 'Espresso, chocolate, and steamed milk harmony.', 'image' => 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=600&q=80']
-];
-
 $dbReady = $conn && $conn instanceof mysqli && $conn->connect_errno === 0;
 
 if ($dbReady) {
@@ -32,28 +25,15 @@ if ($dbReady) {
         )"
     );
 
-    // Seed starter menu rows once so cards have real IDs for edit/delete actions.
-    $countResult = $conn->query('SELECT COUNT(*) AS total FROM menu_items');
-    if ($countResult) {
-        $countRow = $countResult->fetch_assoc();
-        $countResult->free();
-        $totalRows = isset($countRow['total']) ? (int) $countRow['total'] : 0;
-
-        if ($totalRows === 0) {
-            $seedStmt = $conn->prepare('INSERT INTO menu_items (name, price, description, image_path) VALUES (?, ?, ?, ?)');
-            if ($seedStmt) {
-                foreach ($defaultMenuItems as $seedItem) {
-                    $seedName = $seedItem['name'];
-                    $seedPrice = (float) $seedItem['price'];
-                    $seedDescription = $seedItem['description'];
-                    $seedImage = $seedItem['image'];
-                    $seedStmt->bind_param('sdss', $seedName, $seedPrice, $seedDescription, $seedImage);
-                    $seedStmt->execute();
-                }
-                $seedStmt->close();
-            }
-        }
-    }
+    // Cleanup old seeded mock rows from previous builds.
+    $conn->query(
+        "DELETE FROM menu_items
+         WHERE
+            (name = 'Black Coffee' AND price = 4.25 AND description = 'Bold brewed coffee with a smooth finish.' AND image_path LIKE 'https://images.unsplash.com/%')
+            OR (name = 'Cappuccino' AND price = 4.75 AND description = 'Equal parts espresso, steamed milk, and foam.' AND image_path LIKE 'https://images.unsplash.com/%')
+            OR (name = 'Latte' AND price = 4.50 AND description = 'Creamy steamed milk over a rich espresso shot.' AND image_path LIKE 'https://images.unsplash.com/%')
+            OR (name = 'Mocha' AND price = 5.10 AND description = 'Espresso, chocolate, and steamed milk harmony.' AND image_path LIKE 'https://images.unsplash.com/%')"
+    );
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_menu_item'])) {
@@ -79,8 +59,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_menu_item'])) {
         $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
         $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
 
-        if (($image['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-            $menuResult = 'Image upload failed. Please select a valid image file.';
+        $uploadError = (int) ($image['error'] ?? UPLOAD_ERR_NO_FILE);
+        if ($uploadError !== UPLOAD_ERR_OK) {
+            if ($uploadError === UPLOAD_ERR_NO_FILE) {
+                $menuResult = 'Please choose an image to upload.';
+            } elseif ($uploadError === UPLOAD_ERR_INI_SIZE || $uploadError === UPLOAD_ERR_FORM_SIZE) {
+                $menuResult = 'Image is too large for server upload limit.';
+            } elseif ($uploadError === UPLOAD_ERR_PARTIAL) {
+                $menuResult = 'Image upload was interrupted. Please try again.';
+            } else {
+                $menuResult = 'Image upload failed (code ' . $uploadError . ').';
+            }
             $menuResultType = 'error';
         } elseif (($image['size'] ?? 0) > $maxFileBytes) {
             $menuResult = 'Image is too large. Maximum size is 5MB.';
@@ -89,9 +78,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_menu_item'])) {
             $tmpFile = $image['tmp_name'];
             $originalName = $image['name'] ?? '';
             $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-            $mimeType = function_exists('mime_content_type') ? mime_content_type($tmpFile) : '';
+            $imageInfo = @getimagesize($tmpFile);
+            $mimeType = is_array($imageInfo) ? ($imageInfo['mime'] ?? '') : '';
+            $mimeToExt = [
+                'image/jpeg' => 'jpg',
+                'image/png' => 'png',
+                'image/webp' => 'webp',
+                'image/gif' => 'gif'
+            ];
 
-            if (!in_array($extension, $allowedExtensions, true) || !in_array($mimeType, $allowedMimeTypes, true)) {
+            if ($extension === '' && isset($mimeToExt[$mimeType])) {
+                $extension = $mimeToExt[$mimeType];
+            }
+
+            if ($imageInfo === false || !in_array($extension, $allowedExtensions, true) || !in_array($mimeType, $allowedMimeTypes, true)) {
                 $menuResult = 'Only JPG, PNG, WEBP, or GIF files are allowed.';
                 $menuResultType = 'error';
             } else {
@@ -156,10 +156,6 @@ if ($dbReady) {
         }
         $result->free();
     }
-}
-
-if (empty($menuItems)) {
-    $menuItems = $defaultMenuItems;
 }
 
 if ($conn && $conn instanceof mysqli) {
@@ -298,53 +294,64 @@ if ($conn && $conn instanceof mysqli) {
             </div>
 
             <div class="menu-grid">
-                <?php foreach ($menuItems as $item): ?>
-                    <?php $hasId = isset($item['id']) && (int) $item['id'] > 0; ?>
+                <?php if (empty($menuItems)): ?>
                     <article class="menu-card">
-                        <div class="menu-card__image" style="background-image: url('<?php echo htmlspecialchars($item['image']); ?>');" role="img" aria-label="<?php echo htmlspecialchars($item['name']); ?>"></div>
                         <div class="menu-card__body">
                             <div class="menu-card__meta">
-                                <h3><?php echo htmlspecialchars($item['name']); ?></h3>
-                                <span class="price-chip">$<?php echo number_format($item['price'], 2); ?></span>
+                                <h3>No menu items yet</h3>
                             </div>
-                            <p class="menu-card__description"><?php echo htmlspecialchars($item['description']); ?></p>
-                            <div class="menu-card__actions">
-                                <button
-                                    type="button"
-                                    class="icon-btn icon-btn--edit js-edit-item"
-                                    aria-label="Edit item"
-                                    data-id="<?php echo $hasId ? (int) $item['id'] : ''; ?>"
-                                    data-name="<?php echo htmlspecialchars($item['name'], ENT_QUOTES); ?>"
-                                    data-price="<?php echo htmlspecialchars(number_format((float)$item['price'], 2, '.', ''), ENT_QUOTES); ?>"
-                                    data-description="<?php echo htmlspecialchars($item['description'] ?? '', ENT_QUOTES); ?>"
-                                    data-image="<?php echo htmlspecialchars($item['image'] ?? '', ENT_QUOTES); ?>"
-                                    <?php echo $hasId ? '' : 'disabled title="Demo item cannot be edited"'; ?>
-                                >
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M4 20H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                                        <path d="M15.5 4.5L19.5 8.5L10 18H6V14L15.5 4.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                </button>
-
-                                <button
-                                    type="button"
-                                    class="icon-btn icon-btn--delete js-delete-item"
-                                    aria-label="Delete item"
-                                    data-id="<?php echo $hasId ? (int) $item['id'] : ''; ?>"
-                                    <?php echo $hasId ? '' : 'disabled title="Demo item cannot be deleted"'; ?>
-                                >
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M6 7H18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                                        <path d="M10 11V17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                                        <path d="M14 11V17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                                        <path d="M5 7L6 19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19L19 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <path d="M9 7V5C9 4.44772 9.44772 4 10 4H14C14.5523 4 15 4.44772 15 5V7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                </button>
-                            </div>
+                            <p class="menu-card__description">Click the + button to add your first menu item.</p>
                         </div>
                     </article>
-                <?php endforeach; ?>
+                <?php else: ?>
+                    <?php foreach ($menuItems as $item): ?>
+                        <?php $hasId = isset($item['id']) && (int) $item['id'] > 0; ?>
+                        <article class="menu-card">
+                            <div class="menu-card__image" style="background-image: url('<?php echo htmlspecialchars($item['image']); ?>');" role="img" aria-label="<?php echo htmlspecialchars($item['name']); ?>"></div>
+                            <div class="menu-card__body">
+                                <div class="menu-card__meta">
+                                    <h3><?php echo htmlspecialchars($item['name']); ?></h3>
+                                    <span class="price-chip">$<?php echo number_format($item['price'], 2); ?></span>
+                                </div>
+                                <p class="menu-card__description"><?php echo htmlspecialchars($item['description']); ?></p>
+                                <div class="menu-card__actions">
+                                    <button
+                                        type="button"
+                                        class="icon-btn icon-btn--edit js-edit-item"
+                                        aria-label="Edit item"
+                                        data-id="<?php echo $hasId ? (int) $item['id'] : ''; ?>"
+                                        data-name="<?php echo htmlspecialchars($item['name'], ENT_QUOTES); ?>"
+                                        data-price="<?php echo htmlspecialchars(number_format((float)$item['price'], 2, '.', ''), ENT_QUOTES); ?>"
+                                        data-description="<?php echo htmlspecialchars($item['description'] ?? '', ENT_QUOTES); ?>"
+                                        data-image="<?php echo htmlspecialchars($item['image'] ?? '', ENT_QUOTES); ?>"
+                                        <?php echo $hasId ? '' : 'disabled title="Demo item cannot be edited"'; ?>
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M4 20H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                            <path d="M15.5 4.5L19.5 8.5L10 18H6V14L15.5 4.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="icon-btn icon-btn--delete js-delete-item"
+                                        aria-label="Delete item"
+                                        data-id="<?php echo $hasId ? (int) $item['id'] : ''; ?>"
+                                        <?php echo $hasId ? '' : 'disabled title="Demo item cannot be deleted"'; ?>
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M6 7H18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                            <path d="M10 11V17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                            <path d="M14 11V17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                            <path d="M5 7L6 19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19L19 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M9 7V5C9 4.44772 9.44772 4 10 4H14C14.5523 4 15 4.44772 15 5V7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
 
             <button id="menu-fab" class="menu-fab" type="button" aria-label="Add new menu item">+</button>
