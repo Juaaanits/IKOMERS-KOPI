@@ -308,40 +308,42 @@ if ($conn && $conn instanceof mysqli) {
                                     <h3><?php echo htmlspecialchars($item['name']); ?></h3>
                                     <span class="price-chip">$<?php echo number_format($item['price'], 2); ?></span>
                                 </div>
-                                <p class="menu-card__description"><?php echo htmlspecialchars($item['description']); ?></p>
-                                <div class="menu-card__actions">
-                                    <button
-                                        type="button"
-                                        class="icon-btn icon-btn--edit js-edit-item"
-                                        aria-label="Edit item"
-                                        data-id="<?php echo $hasId ? (int) $item['id'] : ''; ?>"
-                                        data-name="<?php echo htmlspecialchars($item['name'], ENT_QUOTES); ?>"
-                                        data-price="<?php echo htmlspecialchars(number_format((float)$item['price'], 2, '.', ''), ENT_QUOTES); ?>"
-                                        data-description="<?php echo htmlspecialchars($item['description'] ?? '', ENT_QUOTES); ?>"
-                                        data-image="<?php echo htmlspecialchars($item['image'] ?? '', ENT_QUOTES); ?>"
-                                        <?php echo $hasId ? '' : 'disabled title="Demo item cannot be edited"'; ?>
-                                    >
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M4 20H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                                            <path d="M15.5 4.5L19.5 8.5L10 18H6V14L15.5 4.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </svg>
-                                    </button>
+                                <div class="menu-card__footer">
+                                    <p class="menu-card__description"><?php echo htmlspecialchars($item['description']); ?></p>
+                                    <div class="menu-card__actions">
+                                        <button
+                                            type="button"
+                                            class="icon-btn icon-btn--edit js-edit-item"
+                                            aria-label="Edit item"
+                                            data-id="<?php echo $hasId ? (int) $item['id'] : ''; ?>"
+                                            data-name="<?php echo htmlspecialchars($item['name'], ENT_QUOTES); ?>"
+                                            data-price="<?php echo htmlspecialchars(number_format((float)$item['price'], 2, '.', ''), ENT_QUOTES); ?>"
+                                            data-description="<?php echo htmlspecialchars($item['description'] ?? '', ENT_QUOTES); ?>"
+                                            data-image="<?php echo htmlspecialchars($item['image'] ?? '', ENT_QUOTES); ?>"
+                                            <?php echo $hasId ? '' : 'disabled title="Demo item cannot be edited"'; ?>
+                                        >
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M4 20H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                                <path d="M15.5 4.5L19.5 8.5L10 18H6V14L15.5 4.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </button>
 
-                                    <button
-                                        type="button"
-                                        class="icon-btn icon-btn--delete js-delete-item"
-                                        aria-label="Delete item"
-                                        data-id="<?php echo $hasId ? (int) $item['id'] : ''; ?>"
-                                        <?php echo $hasId ? '' : 'disabled title="Demo item cannot be deleted"'; ?>
-                                    >
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M6 7H18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                                            <path d="M10 11V17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                                            <path d="M14 11V17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                                            <path d="M5 7L6 19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19L19 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                            <path d="M9 7V5C9 4.44772 9.44772 4 10 4H14C14.5523 4 15 4.44772 15 5V7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </svg>
-                                    </button>
+                                        <button
+                                            type="button"
+                                            class="icon-btn icon-btn--delete js-delete-item"
+                                            aria-label="Delete item"
+                                            data-id="<?php echo $hasId ? (int) $item['id'] : ''; ?>"
+                                            <?php echo $hasId ? '' : 'disabled title="Demo item cannot be deleted"'; ?>
+                                        >
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M6 7H18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                                <path d="M10 11V17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                                <path d="M14 11V17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                                <path d="M5 7L6 19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19L19 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M9 7V5C9 4.44772 9.44772 4 10 4H14C14.5523 4 15 4.44772 15 5V7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </article>
