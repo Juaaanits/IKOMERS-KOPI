@@ -191,6 +191,18 @@ a:focus {
         display: none;
     }
 
+    .dashboard-layout.sidebar-collapsed .brand .brand-icon {
+        display: none;
+    }
+
+    .dashboard-layout.sidebar-collapsed .brand {
+        justify-content: center;
+    }
+
+    .dashboard-layout.sidebar-collapsed .sidebar-toggle {
+        margin-left: 0;
+    }
+
     .dashboard-layout.sidebar-collapsed .sidebar-nav a > span:not(.nav-icon) {
         display: none;
     }
@@ -835,6 +847,38 @@ a:focus {
 
 .recent-orders tbody tr:hover {
     background-color: #f3e8d9;
+}
+
+.recent-orders .status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 110px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.recent-orders .status-pill--pending {
+    background: #fff2bf;
+    color: #7a6200;
+}
+
+.recent-orders .status-pill--processing {
+    background: #dff0ff;
+    color: #1e5f95;
+}
+
+.recent-orders .status-pill--completed {
+    background: #dff5e7;
+    color: #1f6f3d;
+}
+
+.recent-orders .status-pill--cancelled {
+    background: #ffe4e1;
+    color: #a0322b;
 }
 
 

@@ -180,14 +180,14 @@ $initial = strtoupper(substr($username, 0, 1));
                             <td>John Doe</td>
                             <td>1x Cappuccino ($4.75)</td>
                             <td>$4.75</td>
-                            <td>Completed</td>
+                            <td><span class="status-pill status-pill--completed">Completed</span></td>
                         </tr>
                         <tr>
                             <td>#102</td>
                             <td>Jane Smith</td>
                             <td>22x Americano ($3.75)</td>
                             <td>$82.50</td>
-                            <td>Pending</td>
+                            <td><span class="status-pill status-pill--pending">Pending</span></td>
                         </tr>
                         <!-- Add more rows -->
                     </tbody>
