@@ -207,6 +207,12 @@
     box-shadow: 0 8px 14px rgba(0, 0, 0, 0.1);
 }
 
+.pagination button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
 .customers-insights {
     display: grid;
     grid-template-columns: minmax(320px, 1.2fr) 0.8fr;

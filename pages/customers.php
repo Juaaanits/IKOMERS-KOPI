@@ -11,6 +11,12 @@ $stats = [
     'revenuePerCustomer' => 63.64,
     'customersPerDay' => 4.67
 ];
+$perPage = 3;
+$currentPage = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+if ($currentPage < 1) {
+    $currentPage = 1;
+}
+$totalPages = 1;
 
 $dbReady = $conn && $conn instanceof mysqli && $conn->connect_errno === 0;
 
@@ -53,14 +59,34 @@ if ($dbReady) {
         exit;
     }
 
-    $result = $conn->query("SELECT id, name, email, phone, address, orders_count FROM customers ORDER BY id DESC");
-    if ($result) {
-        while ($row = $result->fetch_assoc()) {
-            $customers[] = $row;
-        }
-        $result->free();
+    $totalCustomers = 0;
+    $countResult = $conn->query("SELECT COUNT(*) AS total FROM customers");
+    if ($countResult) {
+        $countRow = $countResult->fetch_assoc();
+        $totalCustomers = (int) ($countRow['total'] ?? 0);
+        $countResult->free();
     }
-    $stats['totalCustomers'] = count($customers);
+
+    $stats['totalCustomers'] = $totalCustomers;
+    $totalPages = max(1, (int) ceil($totalCustomers / $perPage));
+    if ($currentPage > $totalPages) {
+        $currentPage = $totalPages;
+    }
+
+    $offset = ($currentPage - 1) * $perPage;
+    $stmt = $conn->prepare("SELECT id, name, email, phone, address, orders_count FROM customers ORDER BY id DESC LIMIT ? OFFSET ?");
+    if ($stmt) {
+        $stmt->bind_param('ii', $perPage, $offset);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $customers[] = $row;
+            }
+            $result->free();
+        }
+        $stmt->close();
+    }
 }
 
 if ($conn && $conn instanceof mysqli) {
@@ -272,9 +298,21 @@ if ($conn && $conn instanceof mysqli) {
             </div>
 
             <div class="pagination">
-                <button type="button" aria-label="Previous page">&lt;</button>
-                <span>Page 1</span>
-                <button type="button" aria-label="Next page">&gt;</button>
+                <?php $prevPage = max(1, $currentPage - 1); ?>
+                <?php $nextPage = min($totalPages, $currentPage + 1); ?>
+                <button
+                    type="button"
+                    aria-label="Previous page"
+                    <?php echo $currentPage <= 1 ? 'disabled' : ''; ?>
+                    onclick="window.location.href='?page=<?php echo $prevPage; ?>'"
+                >&lt;</button>
+                <span>Page <?php echo $currentPage; ?> of <?php echo $totalPages; ?></span>
+                <button
+                    type="button"
+                    aria-label="Next page"
+                    <?php echo $currentPage >= $totalPages ? 'disabled' : ''; ?>
+                    onclick="window.location.href='?page=<?php echo $nextPage; ?>'"
+                >&gt;</button>
             </div>
 
             <div class="customers-insights">
