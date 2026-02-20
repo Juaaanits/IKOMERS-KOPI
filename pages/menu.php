@@ -25,15 +25,38 @@ if ($dbReady) {
         )"
     );
 
-    // Cleanup old seeded mock rows from previous builds.
-    $conn->query(
-        "DELETE FROM menu_items
-         WHERE
-            (name = 'Black Coffee' AND price = 4.25 AND description = 'Bold brewed coffee with a smooth finish.' AND image_path LIKE 'https://images.unsplash.com/%')
-            OR (name = 'Cappuccino' AND price = 4.75 AND description = 'Equal parts espresso, steamed milk, and foam.' AND image_path LIKE 'https://images.unsplash.com/%')
-            OR (name = 'Latte' AND price = 4.50 AND description = 'Creamy steamed milk over a rich espresso shot.' AND image_path LIKE 'https://images.unsplash.com/%')
-            OR (name = 'Mocha' AND price = 5.10 AND description = 'Espresso, chocolate, and steamed milk harmony.' AND image_path LIKE 'https://images.unsplash.com/%')"
-    );
+    $countResult = $conn->query("SELECT COUNT(*) AS total FROM menu_items");
+    $menuCount = 0;
+    if ($countResult) {
+        $countRow = $countResult->fetch_assoc();
+        $menuCount = (int) ($countRow['total'] ?? 0);
+        $countResult->free();
+    }
+
+    // Seed starter menu only when table is empty.
+    if ($menuCount === 0) {
+        $seedItems = [
+            ['Black Coffee', 4.25, 'Bold brewed coffee with a smooth finish.', 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80'],
+            ['Cappuccino', 4.75, 'Equal parts espresso, steamed milk, and foam.', 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1200&q=80'],
+            ['Latte', 4.50, 'Creamy steamed milk over a rich espresso shot.', 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=1200&q=80'],
+            ['Mocha', 5.10, 'Espresso, chocolate, and steamed milk harmony.', 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80'],
+            ['Americano', 3.95, 'Espresso diluted with hot water for a clean, bold cup.', 'https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=1200&q=80'],
+            ['Flat White', 4.85, 'Velvety microfoam over double espresso.', 'https://images.unsplash.com/photo-1510627498534-cf7e9002facc?auto=format&fit=crop&w=1200&q=80']
+        ];
+
+        $seedStmt = $conn->prepare("INSERT INTO menu_items (name, price, description, image_path) VALUES (?, ?, ?, ?)");
+        if ($seedStmt) {
+            foreach ($seedItems as $seed) {
+                $seedName = $seed[0];
+                $seedPrice = (float) $seed[1];
+                $seedDesc = $seed[2];
+                $seedImage = $seed[3];
+                $seedStmt->bind_param('sdss', $seedName, $seedPrice, $seedDesc, $seedImage);
+                $seedStmt->execute();
+            }
+            $seedStmt->close();
+        }
+    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_menu_item']) && empty($_POST['item_id'])) {

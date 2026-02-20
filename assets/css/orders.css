@@ -493,6 +493,245 @@
     color: #fdfbf8;
 }
 
+.btn--danger-submit {
+    background: #ef4b3a;
+    color: #fff;
+}
+
+/* Clone-like Add Order + Select Customer modal styling */
+#orderModal {
+    width: min(860px, 94vw);
+}
+
+#orderModal .order-create-card {
+    background: #f4f8fb;
+    border: 1px solid #d7e2ec;
+    border-radius: 12px;
+    padding: 16px 18px 14px;
+    gap: 12px;
+}
+
+#orderModal .orders-modal__header h3 {
+    color: #2e93da;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+#orderModal .close-btn {
+    background: transparent;
+    color: #20384d;
+    font-weight: 700;
+}
+
+.order-create-grid {
+    display: grid;
+    gap: 10px 12px;
+}
+
+#orderModal .field > span {
+    color: #2f3f52;
+    font-weight: 700;
+}
+
+#orderModal .customer-row {
+    grid-template-columns: 1fr 98px 44px;
+    gap: 8px;
+}
+
+#orderModal .customer-row input {
+    min-height: 42px;
+}
+
+#orderModal .id-chip {
+    width: 98px;
+    text-align: center;
+    color: #4f6578;
+    background: #eaf1f7;
+    border-color: #bfd4e5;
+    font-weight: 700;
+}
+
+#orderModal .icon-btn--search {
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+    background: #2f94db;
+    color: #fff;
+}
+
+#orderModal .add-item-btn {
+    margin: 0;
+    background: #2f94db;
+    border-radius: 6px;
+    min-height: 38px;
+}
+
+.order-items-box {
+    border: 1px solid #dbe5ee;
+    border-radius: 2px;
+    background: #fff;
+    min-height: 170px;
+    overflow: hidden;
+}
+
+#orderModal .items-table thead {
+    background: #4b2b1c;
+    color: #fff;
+}
+
+#orderModal .items-table th,
+#orderModal .items-table td {
+    text-align: left;
+    border-bottom: 1px solid #eef2f6;
+}
+
+.items-empty-row {
+    height: 120px;
+}
+
+.order-item-edit-row td {
+    background: #efe6db;
+}
+
+.order-item-input {
+    width: 100%;
+    border: 0;
+    border-bottom: 2px solid #6f5d52;
+    background: transparent;
+    color: #2f2b27;
+    font-weight: 600;
+    padding: 6px 4px;
+    outline: none;
+}
+
+.order-item-input:focus {
+    border-bottom-color: #2f94db;
+}
+
+.order-item-input[readonly] {
+    background: #f4ece2;
+    color: #5f5348;
+    cursor: not-allowed;
+}
+
+.order-item-total {
+    font-weight: 700;
+    color: #2f2b27;
+}
+
+.row-remove-btn {
+    width: 26px;
+    height: 26px;
+    border: 0;
+    border-radius: 999px;
+    background: #ecd7cf;
+    color: #a16f61;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.order-items-hidden {
+    display: none;
+}
+
+#orderModal .field--half {
+    max-width: 260px;
+}
+
+#orderModal .modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+#orderModal .btn {
+    min-height: 46px;
+    border-radius: 6px;
+}
+
+#orderModal .btn--ghost {
+    background: #737f8f;
+    color: #fff;
+}
+
+#orderModal .btn--danger-submit {
+    background: #ef4b3a;
+}
+
+#selectCustomerModal {
+    width: min(980px, 96vw);
+}
+
+#selectCustomerModal .select-customer-card {
+    background: #f7fbff;
+    border: 1px solid #d6e1ec;
+    border-radius: 4px;
+    padding: 0 12px 12px;
+    gap: 10px;
+}
+
+#selectCustomerModal .select-customer-header {
+    margin: 0 -12px;
+    padding: 10px 12px;
+    background: #2a2a2a;
+    color: #fff;
+    border-radius: 4px 4px 0 0;
+}
+
+#selectCustomerModal .select-customer-header h3 {
+    color: #fff;
+    font-size: 1.12rem;
+}
+
+#selectCustomerModal .select-customer-header .close-btn {
+    background: transparent;
+    color: #fff;
+}
+
+#selectCustomerModal .select-customer-search input {
+    min-height: 40px;
+}
+
+#selectCustomerModal .customers-list {
+    border: 1px solid #d8e1ea;
+    border-radius: 2px;
+    max-height: 430px;
+}
+
+#selectCustomerModal .customers-list thead {
+    background: #4b2b1c;
+    color: #fff;
+    position: sticky;
+    top: 0;
+}
+
+#selectCustomerModal .customers-list th,
+#selectCustomerModal .customers-list td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #e7edf3;
+}
+
+#selectCustomerModal .customers-list tbody tr {
+    cursor: pointer;
+}
+
+#selectCustomerModal .customers-list tbody tr:hover,
+#selectCustomerModal .customers-list tbody tr.is-selected {
+    background: #deebf7;
+}
+
+#selectCustomerModal .modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+#selectCustomerModal .btn {
+    min-height: 44px;
+    border-radius: 6px;
+}
+
 .order-view-card {
     background: #fff;
     border-color: #e6edf7;
