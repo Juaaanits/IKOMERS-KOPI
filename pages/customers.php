@@ -227,7 +227,7 @@ if ($conn && $conn instanceof mysqli) {
                                 <td><?php echo htmlspecialchars($customer['address']); ?></td>
                                 <td>
                                     <span class="orders-badge <?php echo $orderBadgeClass; ?>">
-                                        <?php echo $orderCount; ?> orders
+                                        <?php echo $orderCount; ?>&nbsp;orders
                                     </span>
                                 </td>
                                 <td class="actions-cell">
