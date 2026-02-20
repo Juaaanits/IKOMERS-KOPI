@@ -27,6 +27,32 @@ if ($dbReady) {
         )"
     );
 
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty(trim($_POST['id'] ?? ''))) {
+        $name = trim($_POST['full_name'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $phone = trim($_POST['phone'] ?? '');
+        $address = trim($_POST['address'] ?? '');
+        $ordersCount = isset($_POST['orders_count']) ? (int) $_POST['orders_count'] : 0;
+
+        if (
+            $name !== '' &&
+            strlen($name) <= 120 &&
+            filter_var($email, FILTER_VALIDATE_EMAIL) &&
+            $phone !== '' &&
+            $ordersCount >= 0
+        ) {
+            $insert = $conn->prepare('INSERT INTO customers (name, email, phone, address, orders_count) VALUES (?, ?, ?, ?, ?)');
+            if ($insert) {
+                $insert->bind_param('ssssi', $name, $email, $phone, $address, $ordersCount);
+                $insert->execute();
+                $insert->close();
+            }
+        }
+
+        header('Location: customers.php');
+        exit;
+    }
+
     $result = $conn->query("SELECT id, name, email, phone, address, orders_count FROM customers ORDER BY id DESC");
     if ($result) {
         while ($row = $result->fetch_assoc()) {
@@ -295,6 +321,7 @@ if ($conn && $conn instanceof mysqli) {
             <dialog id="addCustomerModal" class="customers-modal">
                 <form id="customer-form" class="customers-modal__card" method="post" action="#" novalidate>
                     <input type="hidden" name="id" id="customer-id" value="">
+                    <input type="hidden" name="orders_count" id="customer-orders" value="0">
                     <header class="customers-modal__header">
                         <h3 id="customer-form-title">Add New Customer</h3>
                         <button type="button" class="close-btn" id="closeAddCustomer" aria-label="Close add customer form">&times;</button>
@@ -315,10 +342,6 @@ if ($conn && $conn instanceof mysqli) {
                         <label class="field field--full">
                             <span>Address</span>
                             <input type="text" name="address" id="customer-address" placeholder="Address">
-                        </label>
-                        <label class="field">
-                            <span>Orders Count</span>
-                            <input type="number" name="orders_count" id="customer-orders" min="0" value="0" required>
                         </label>
                     </div>
                     <div class="modal-actions">
