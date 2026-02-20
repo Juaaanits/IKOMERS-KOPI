@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const dropzone = document.getElementById("dropzone");
   const fileInput = document.getElementById("image-input");
   const form = document.getElementById("menu-form");
+  const fileNameLabel = document.getElementById("selected-image-name");
 
   const openModal = () => modal?.showModal();
   const closeModalDialog = () => modal?.close();
@@ -15,15 +16,27 @@ document.addEventListener("DOMContentLoaded", () => {
   closeModal?.addEventListener("click", closeModalDialog);
   cancelBtn?.addEventListener("click", closeModalDialog);
 
-  // Prevent default submit for now; this is placeholder UI only.
-  form?.addEventListener("submit", (event) => {
-    event.preventDefault();
-    closeModalDialog();
+  form?.addEventListener("submit", () => {
+    if (modal) {
+      modal.setAttribute("aria-busy", "true");
+    }
   });
 
   browseLink?.addEventListener("click", (event) => {
     event.preventDefault();
     fileInput?.click();
+  });
+
+  const updateFileName = (files) => {
+    if (!fileNameLabel) return;
+    fileNameLabel.textContent = files && files.length
+      ? `Selected: ${files[0].name}`
+      : "No image selected yet";
+  };
+
+  fileInput?.addEventListener("change", (event) => {
+    const target = event.target;
+    updateFileName(target?.files);
   });
 
   if (dropzone) {
@@ -48,6 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const { files } = event.dataTransfer || {};
       if (files && files.length) {
         fileInput.files = files;
+        updateFileName(files);
       }
     });
   }

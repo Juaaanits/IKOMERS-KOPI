@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once '../includes/db.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
@@ -8,34 +9,144 @@ if (!isset($_SESSION['user_id'])) {
 
 $username = $_SESSION['username'] ?? 'User';
 $initial = strtoupper(substr($username, 0, 1));
+$menuItems = [];
+$menuResult = '';
+$menuResultType = '';
+$nameValue = '';
+$priceValue = '';
+$descriptionValue = '';
 
-// Temporary static data to illustrate the menu grid
-$menuItems = [
-    [
-        'name' => 'Black Coffee',
-        'price' => 4.25,
-        'description' => 'Bold brewed coffee with a smooth finish.',
-        'image' => 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=600&q=80'
-    ],
-    [
-        'name' => 'Cappuccino',
-        'price' => 4.75,
-        'description' => 'Equal parts espresso, steamed milk, and foam.',
-        'image' => 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=600&q=80&sat=-40'
-    ],
-    [
-        'name' => 'Latte',
-        'price' => 4.50,
-        'description' => 'Creamy steamed milk over a rich espresso shot.',
-        'image' => 'https://images.unsplash.com/photo-1510626176961-4b37d0b4e904?auto=format&fit=crop&w=600&q=80'
-    ],
-    [
-        'name' => 'Mocha',
-        'price' => 5.10,
-        'description' => 'Espresso, chocolate, and steamed milk harmony.',
-        'image' => 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=600&q=80'
-    ]
+$defaultMenuItems = [
+    ['name' => 'Black Coffee', 'price' => 4.25, 'description' => 'Bold brewed coffee with a smooth finish.', 'image' => 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=600&q=80'],
+    ['name' => 'Cappuccino', 'price' => 4.75, 'description' => 'Equal parts espresso, steamed milk, and foam.', 'image' => 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=600&q=80&sat=-40'],
+    ['name' => 'Latte', 'price' => 4.50, 'description' => 'Creamy steamed milk over a rich espresso shot.', 'image' => 'https://images.unsplash.com/photo-1510626176961-4b37d0b4e904?auto=format&fit=crop&w=600&q=80'],
+    ['name' => 'Mocha', 'price' => 5.10, 'description' => 'Espresso, chocolate, and steamed milk harmony.', 'image' => 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=600&q=80']
 ];
+
+$dbReady = $conn && $conn instanceof mysqli && $conn->connect_errno === 0;
+
+if ($dbReady) {
+    $conn->query(
+        "CREATE TABLE IF NOT EXISTS menu_items (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(120) NOT NULL,
+            price DECIMAL(10,2) NOT NULL,
+            description TEXT NULL,
+            image_path VARCHAR(255) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )"
+    );
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_menu_item'])) {
+    $nameValue = trim($_POST['name'] ?? '');
+    $priceValue = trim($_POST['price'] ?? '');
+    $descriptionValue = trim($_POST['description'] ?? '');
+
+    if (!$dbReady) {
+        $menuResult = 'Database is unavailable. Please try again later.';
+        $menuResultType = 'error';
+    } elseif ($nameValue === '' || strlen($nameValue) > 120) {
+        $menuResult = 'Name is required and should be at most 120 characters.';
+        $menuResultType = 'error';
+    } elseif (!is_numeric($priceValue) || (float) $priceValue <= 0) {
+        $menuResult = 'Price must be a number greater than 0.';
+        $menuResultType = 'error';
+    } elseif (!isset($_FILES['image']) || !is_array($_FILES['image'])) {
+        $menuResult = 'Please choose an image to upload.';
+        $menuResultType = 'error';
+    } else {
+        $image = $_FILES['image'];
+        $maxFileBytes = 5 * 1024 * 1024;
+        $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+
+        if (($image['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            $menuResult = 'Image upload failed. Please select a valid image file.';
+            $menuResultType = 'error';
+        } elseif (($image['size'] ?? 0) > $maxFileBytes) {
+            $menuResult = 'Image is too large. Maximum size is 5MB.';
+            $menuResultType = 'error';
+        } else {
+            $tmpFile = $image['tmp_name'];
+            $originalName = $image['name'] ?? '';
+            $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+            $mimeType = function_exists('mime_content_type') ? mime_content_type($tmpFile) : '';
+
+            if (!in_array($extension, $allowedExtensions, true) || !in_array($mimeType, $allowedMimeTypes, true)) {
+                $menuResult = 'Only JPG, PNG, WEBP, or GIF files are allowed.';
+                $menuResultType = 'error';
+            } else {
+                $uploadDir = realpath(__DIR__ . '/../assets/uploads');
+                if ($uploadDir === false) {
+                    $uploadDir = __DIR__ . '/../assets/uploads';
+                    if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true)) {
+                        $menuResult = 'Failed to prepare upload directory.';
+                        $menuResultType = 'error';
+                    }
+                }
+
+                $menuUploadDir = $uploadDir . '/menu';
+                if ($menuResultType === '' && !is_dir($menuUploadDir) && !mkdir($menuUploadDir, 0775, true)) {
+                    $menuResult = 'Failed to create menu upload directory.';
+                    $menuResultType = 'error';
+                }
+
+                if ($menuResultType === '') {
+                    $fileName = bin2hex(random_bytes(8)) . '.' . $extension;
+                    $targetPath = $menuUploadDir . '/' . $fileName;
+                    $dbImagePath = '../assets/uploads/menu/' . $fileName;
+
+                    if (!move_uploaded_file($tmpFile, $targetPath)) {
+                        $menuResult = 'Failed to save uploaded image.';
+                        $menuResultType = 'error';
+                    } else {
+                        $insert = $conn->prepare('INSERT INTO menu_items (name, price, description, image_path) VALUES (?, ?, ?, ?)');
+                        if (!$insert) {
+                            @unlink($targetPath);
+                            $menuResult = 'Unable to save menu item right now.';
+                            $menuResultType = 'error';
+                        } else {
+                            $priceAsDecimal = (float) $priceValue;
+                            $insert->bind_param('sdss', $nameValue, $priceAsDecimal, $descriptionValue, $dbImagePath);
+
+                            if ($insert->execute()) {
+                                $menuResult = 'Menu item added successfully.';
+                                $menuResultType = 'success';
+                                $nameValue = '';
+                                $priceValue = '';
+                                $descriptionValue = '';
+                            } else {
+                                @unlink($targetPath);
+                                $menuResult = 'Failed to save the new menu item.';
+                                $menuResultType = 'error';
+                            }
+                            $insert->close();
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+if ($dbReady) {
+    $result = $conn->query('SELECT id, name, price, description, image_path AS image FROM menu_items ORDER BY id DESC');
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $menuItems[] = $row;
+        }
+        $result->free();
+    }
+}
+
+if (empty($menuItems)) {
+    $menuItems = $defaultMenuItems;
+}
+
+if ($conn && $conn instanceof mysqli) {
+    $conn->close();
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -138,6 +249,11 @@ $menuItems = [
         </header>
 
         <section class="menu-page" aria-label="Menu items">
+            <?php if ($menuResult !== ''): ?>
+                <div class="menu-feedback menu-feedback--<?php echo $menuResultType === 'success' ? 'success' : 'error'; ?>">
+                    <?php echo htmlspecialchars($menuResult); ?>
+                </div>
+            <?php endif; ?>
             <div class="menu-page__header">
                 <div>
                     <p class="eyebrow">Cafe Shop</p>
@@ -194,35 +310,36 @@ $menuItems = [
                         <div>
                             <h3>Add New Menu Item</h3>
                         </div>
-                        <button id="close-menu-modal" type="button" class="close-btn" aria-label="Close add menu form">×</button>
+                        <button id="close-menu-modal" type="button" class="close-btn" aria-label="Close add menu form">&times;</button>
                     </header>
 
                     <div class="form-grid">
                         <label class="field">
                             <span>Name</span>
-                            <input type="text" name="name" placeholder="Name" required>
+                            <input type="text" name="name" placeholder="Name" value="<?php echo htmlspecialchars($nameValue, ENT_QUOTES); ?>" required>
                         </label>
                         <label class="field">
                             <span>Price</span>
-                            <input type="number" step="0.01" name="price" placeholder="Price" required>
+                            <input type="number" step="0.01" min="0.01" name="price" placeholder="Price" value="<?php echo htmlspecialchars($priceValue, ENT_QUOTES); ?>" required>
                         </label>
                         <label class="field field--full">
                             <span>Description</span>
-                            <textarea name="description" rows="3" placeholder="Description"></textarea>
+                            <textarea name="description" rows="3" placeholder="Description"><?php echo htmlspecialchars($descriptionValue); ?></textarea>
                         </label>
                         <label class="field field--full">
                             <span>Image</span>
                             <div class="dropzone" id="dropzone">
-                                <input type="file" name="image" id="image-input" accept="image/*">
+                                <input type="file" name="image" id="image-input" accept=".jpg,.jpeg,.png,.webp,.gif,image/*" required>
                                 <p>Drag and drop an image here</p>
                                 <a href="#" id="browse-files" aria-label="Browse files">Browse Files</a>
+                                <p id="selected-image-name" class="dropzone__filename">No image selected yet</p>
                             </div>
                         </label>
                     </div>
 
                     <div class="modal-actions">
                         <button type="button" class="btn btn--ghost" id="cancel-menu-item">Cancel</button>
-                        <button type="submit" class="btn btn--primary">Add Item</button>
+                        <button type="submit" class="btn btn--primary" name="add_menu_item">Add Item</button>
                     </div>
                 </form>
             </dialog>
@@ -230,5 +347,7 @@ $menuItems = [
     </main>
 </div>
 <script src="../assets/js/custom/menu.js"></script>
+<script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 </html>
+

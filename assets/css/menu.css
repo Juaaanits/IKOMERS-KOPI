@@ -49,6 +49,25 @@
     backdrop-filter: blur(4px);
 }
 
+.menu-feedback {
+    margin: 10px 0 14px;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-weight: 600;
+}
+
+.menu-feedback--success {
+    background: #e7f8f1;
+    border: 1px solid #a7e0c9;
+    color: #0b7f55;
+}
+
+.menu-feedback--error {
+    background: #fff0ef;
+    border: 1px solid #f2bbb7;
+    color: #b9392f;
+}
+
 .menu-page__header h2 {
     margin: 4px 0 0;
     font-size: 1.9rem;
@@ -315,6 +334,12 @@
 .dropzone a {
     color: #2d91e0;
     font-weight: 700;
+}
+
+.dropzone__filename {
+    margin: 2px 0 0;
+    font-size: 0.85rem;
+    color: #5a7096;
 }
 
 .modal-actions {
