@@ -281,13 +281,28 @@ if ($conn && $conn instanceof mysqli) {
                             </div>
                             <p class="menu-card__description"><?php echo htmlspecialchars($item['description']); ?></p>
                             <div class="menu-card__actions">
-                                <button type="button" class="icon-btn icon-btn--edit" aria-label="Edit item">
+                                <button
+                                    type="button"
+                                    class="icon-btn icon-btn--edit js-edit-item"
+                                    aria-label="Edit item"
+                                    data-id="<?php echo (int)$item['id']; ?>"
+                                    data-name="<?php echo htmlspecialchars($item['name'], ENT_QUOTES); ?>"
+                                    data-price="<?php echo htmlspecialchars(number_format((float)$item['price'], 2, '.', ''), ENT_QUOTES); ?>"
+                                    data-description="<?php echo htmlspecialchars($item['description'] ?? '', ENT_QUOTES); ?>"
+                                    data-image="<?php echo htmlspecialchars($item['image'] ?? '', ENT_QUOTES); ?>"
+                                >
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M4 20H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                                         <path d="M15.5 4.5L19.5 8.5L10 18H6V14L15.5 4.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                                     </svg>
                                 </button>
-                                <button type="button" class="icon-btn icon-btn--delete" aria-label="Delete item">
+
+                                <button
+                                    type="button"
+                                    class="icon-btn icon-btn--delete js-delete-item"
+                                    aria-label="Delete item"
+                                    data-id="<?php echo (int)$item['id']; ?>"
+                                >
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M6 7H18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                                         <path d="M10 11V17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
@@ -308,10 +323,12 @@ if ($conn && $conn instanceof mysqli) {
                 <form id="menu-form" class="menu-modal__card" action="#" method="post" enctype="multipart/form-data" novalidate>
                     <header class="menu-modal__header">
                         <div>
-                            <h3>Add New Menu Item</h3>
+                            <h3 id="menu-modal-title">Add New Menu Item</h3>
                         </div>
                         <button id="close-menu-modal" type="button" class="close-btn" aria-label="Close add menu form">&times;</button>
                     </header>
+
+                    <input type="hidden" name="item_id" id="menu-item-id" value="">
 
                     <div class="form-grid">
                         <label class="field">
@@ -339,7 +356,7 @@ if ($conn && $conn instanceof mysqli) {
 
                     <div class="modal-actions">
                         <button type="button" class="btn btn--ghost" id="cancel-menu-item">Cancel</button>
-                        <button type="submit" class="btn btn--primary" name="add_menu_item">Add Item</button>
+                        <button type="submit" class="btn btn--primary" name="add_menu_item" id="menu-submit-btn">Add Item</button>
                     </div>
                 </form>
             </dialog>
