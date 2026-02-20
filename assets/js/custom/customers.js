@@ -9,27 +9,122 @@ document.addEventListener("DOMContentLoaded", () => {
   const confirmRemove = document.getElementById("confirmRemoveCustomer");
   const removeName = document.getElementById("removeCustomerName");
   const removeEmail = document.getElementById("removeCustomerEmail");
+  const form = document.getElementById("customer-form");
+  const formTitle = document.getElementById("customer-form-title");
+  const submitBtn = document.getElementById("customer-submit-btn");
+  const customerIdInput = document.getElementById("customer-id");
+  const customerNameInput = document.getElementById("customer-name");
+  const customerEmailInput = document.getElementById("customer-email");
+  const customerPhoneInput = document.getElementById("customer-phone");
+  const customerAddressInput = document.getElementById("customer-address");
+  const customerOrdersInput = document.getElementById("customer-orders");
+
+  let pendingDeleteId = "";
+  let pendingDeleteRow = null;
 
   const openAdd = () => addModal?.showModal();
   const closeAddModal = () => addModal?.close();
   const openRemove = () => removeModal?.showModal();
   const closeRemoveModal = () => removeModal?.close();
 
-  fab?.addEventListener("click", openAdd);
+  const parseJsonResponse = async (res) => {
+    const raw = await res.text();
+    try {
+      return JSON.parse(raw);
+    } catch {
+      throw new Error(raw.slice(0, 180) || "Invalid JSON response");
+    }
+  };
+
+  const resetToAddMode = () => {
+    if (formTitle) formTitle.textContent = "Add New Customer";
+    if (submitBtn) submitBtn.textContent = "Add Customer";
+    if (customerIdInput) customerIdInput.value = "";
+    if (form) form.reset();
+    if (customerOrdersInput) customerOrdersInput.value = "0";
+  };
+
+  fab?.addEventListener("click", () => {
+    resetToAddMode();
+    openAdd();
+  });
   closeAdd?.addEventListener("click", closeAddModal);
   cancelAdd?.addEventListener("click", closeAddModal);
 
-  document.querySelectorAll(".icon-btn--delete").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      if (removeName) removeName.textContent = btn.dataset.name || "Selected customer";
-      if (removeEmail) removeEmail.textContent = btn.dataset.email || "";
+  document.addEventListener("click", (event) => {
+    const editBtn = event.target.closest(".js-edit-customer");
+    if (editBtn) {
+      if (formTitle) formTitle.textContent = "Edit Customer";
+      if (submitBtn) submitBtn.textContent = "Save Changes";
+      if (customerIdInput) customerIdInput.value = editBtn.dataset.id || "";
+      if (customerNameInput) customerNameInput.value = editBtn.dataset.name || "";
+      if (customerEmailInput) customerEmailInput.value = editBtn.dataset.email || "";
+      if (customerPhoneInput) customerPhoneInput.value = editBtn.dataset.phone || "";
+      if (customerAddressInput) customerAddressInput.value = editBtn.dataset.address || "";
+      if (customerOrdersInput) customerOrdersInput.value = editBtn.dataset.orders || "0";
+      openAdd();
+      return;
+    }
+
+    const deleteBtn = event.target.closest(".js-delete-customer");
+    if (deleteBtn) {
+      pendingDeleteId = deleteBtn.dataset.id || "";
+      pendingDeleteRow = deleteBtn.closest("tr");
+      if (removeName) removeName.textContent = deleteBtn.dataset.name || "Selected customer";
+      if (removeEmail) removeEmail.textContent = deleteBtn.dataset.email || "";
       openRemove();
-    });
+    }
   });
 
   closeRemove?.addEventListener("click", closeRemoveModal);
   cancelRemove?.addEventListener("click", closeRemoveModal);
-  confirmRemove?.addEventListener("click", closeRemoveModal);
+  confirmRemove?.addEventListener("click", async () => {
+    if (!pendingDeleteId) {
+      closeRemoveModal();
+      return;
+    }
+
+    const fd = new FormData();
+    fd.append("id", pendingDeleteId);
+
+    const res = await fetch("customers_delete.php", { method: "POST", body: fd });
+    const data = await parseJsonResponse(res);
+
+    if (!data.ok) {
+      alert(data.message || "Delete failed");
+      return;
+    }
+
+    if (pendingDeleteRow) {
+      pendingDeleteRow.remove();
+    } else {
+      window.location.reload();
+    }
+
+    pendingDeleteId = "";
+    pendingDeleteRow = null;
+    closeRemoveModal();
+  });
+
+  form?.addEventListener("submit", async (event) => {
+    const isEditMode = !!(customerIdInput?.value || "").trim();
+    if (!isEditMode) {
+      // Keep current non-API add flow unchanged.
+      return;
+    }
+
+    event.preventDefault();
+    const fd = new FormData(form);
+    const res = await fetch("customers_update.php", { method: "POST", body: fd });
+    const data = await parseJsonResponse(res);
+
+    if (!data.ok) {
+      alert(data.message || "Update failed");
+      return;
+    }
+
+    window.location.reload();
+  });
 
   // Chart: spending distribution
   const spendingCtx = document.getElementById("spendingChart");
