@@ -316,5 +316,7 @@ $initial = strtoupper(substr($username, 0, 1));
         });
     }
 </script>
+<script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 </html>
+

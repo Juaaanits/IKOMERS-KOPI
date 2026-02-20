@@ -64,6 +64,7 @@ a:focus {
     flex-direction: column;
     gap: 36px;
     box-shadow: 4px 0 20px rgba(0, 0, 0, 0.16);
+    transition: width 220ms ease, padding 220ms ease;
 }
 
 .brand {
@@ -85,6 +86,46 @@ a:focus {
     border-radius: 12px;
     background-color: var(--accent-muted);
     font-size: 1.4rem;
+}
+
+.sidebar-toggle {
+    margin-left: auto;
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color var(--transition-speed) ease, transform var(--transition-speed) ease;
+}
+
+.sidebar-toggle:hover,
+.sidebar-toggle:focus-visible {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.sidebar-toggle:active {
+    transform: scale(0.96);
+}
+
+.sidebar-toggle__lines {
+    width: 16px;
+    height: 12px;
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.sidebar-toggle__lines span {
+    display: block;
+    height: 2px;
+    width: 100%;
+    background: currentColor;
+    border-radius: 999px;
 }
 
 .sidebar-nav {
@@ -138,6 +179,39 @@ a:focus {
     display: grid;
     gap: 12px;
     font-size: 0.95rem;
+}
+
+@media (min-width: 1081px) {
+    .dashboard-layout.sidebar-collapsed .sidebar {
+        width: 92px;
+        padding: 32px 14px;
+    }
+
+    .dashboard-layout.sidebar-collapsed .brand > span:not(.brand-icon) {
+        display: none;
+    }
+
+    .dashboard-layout.sidebar-collapsed .sidebar-nav a > span:not(.nav-icon) {
+        display: none;
+    }
+
+    .dashboard-layout.sidebar-collapsed .sidebar-nav a {
+        justify-content: center;
+        padding: 12px;
+        border-left: 0;
+        transform: none;
+    }
+
+    .dashboard-layout.sidebar-collapsed .sidebar-nav a:hover,
+    .dashboard-layout.sidebar-collapsed .sidebar-nav a:focus,
+    .dashboard-layout.sidebar-collapsed .sidebar-nav a[aria-current="page"] {
+        transform: none;
+        border-left: 0;
+    }
+
+    .dashboard-layout.sidebar-collapsed .sidebar-footer {
+        display: none;
+    }
 }
 
 .logout-link {

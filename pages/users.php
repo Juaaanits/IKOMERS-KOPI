@@ -215,5 +215,7 @@ $users = [
     </main>
 </div>
 <script src="../assets/js/custom/users.js"></script>
+<script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 </html>
+
