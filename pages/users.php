@@ -18,7 +18,7 @@ $users = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Users | IKOMERS KOPI</title>
     <link rel="stylesheet" href="../assets/css/dashboard.css">
-    <link rel="stylesheet" href="../assets/css/users.css">
+    <link rel="stylesheet" href="../assets/css/users.css?v=<?php echo filemtime(__DIR__ . '/../assets/css/users.css'); ?>">
 </head>
 <body>
 <div class="dashboard-layout">
@@ -118,7 +118,6 @@ $users = [
         <section class="users-page" aria-label="User management">
             <div class="users-header">
                 <div>
-                    <p class="eyebrow">User Management</p>
                     <h2>User Management</h2>
                 </div>
             </div>

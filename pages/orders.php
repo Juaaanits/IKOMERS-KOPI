@@ -227,7 +227,6 @@ if ($conn && $conn instanceof mysqli) {
             <?php endif; ?>
             <div class="orders-header">
                 <div>
-                    <p class="eyebrow">Cafe Orders</p>
                     <h2>Caf&eacute; Orders</h2>
                 </div>
                 <div class="filters">

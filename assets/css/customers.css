@@ -36,7 +36,7 @@
 
 .customers-page__header h2 {
     margin: 4px 0 0;
-    color: var(--cust-head);
+    color: #c5823d;
     font-size: 1.8rem;
 }
 
@@ -93,7 +93,11 @@
 }
 
 .customers-table th:nth-child(1),
-.customers-table td:nth-child(1) { width: 5%; }
+.customers-table td:nth-child(1) {
+     width: 5%;
+     padding-left: 14px;
+     padding-right: 14px;
+}
 .customers-table th:nth-child(2),
 .customers-table td:nth-child(2) { width: 16%; }
 .customers-table th:nth-child(3),

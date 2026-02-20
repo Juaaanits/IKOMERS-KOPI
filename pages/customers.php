@@ -204,7 +204,6 @@ if ($conn && $conn instanceof mysqli) {
         <section class="customers-page" aria-label="Customer list">
             <div class="customers-page__header">
                 <div>
-                    <p class="eyebrow">Cafe Clients</p>
                     <h2>Caf&eacute; Clients</h2>
                 </div>
                 <div class="header-actions">

@@ -274,7 +274,6 @@ if ($conn && $conn instanceof mysqli) {
         <section class="menu-page" aria-label="Menu items">
             <div class="menu-page__header">
                 <div>
-                    <p class="eyebrow">Cafe Shop</p>
                     <h2>Cafe Shop Menu Items</h2>
                 </div>
                 <div class="menu-page__filters">
