@@ -36,6 +36,29 @@ if ($dbReady) {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )"
     );
+
+    // Seed starter menu rows once so cards have real IDs for edit/delete actions.
+    $countResult = $conn->query('SELECT COUNT(*) AS total FROM menu_items');
+    if ($countResult) {
+        $countRow = $countResult->fetch_assoc();
+        $countResult->free();
+        $totalRows = isset($countRow['total']) ? (int) $countRow['total'] : 0;
+
+        if ($totalRows === 0) {
+            $seedStmt = $conn->prepare('INSERT INTO menu_items (name, price, description, image_path) VALUES (?, ?, ?, ?)');
+            if ($seedStmt) {
+                foreach ($defaultMenuItems as $seedItem) {
+                    $seedName = $seedItem['name'];
+                    $seedPrice = (float) $seedItem['price'];
+                    $seedDescription = $seedItem['description'];
+                    $seedImage = $seedItem['image'];
+                    $seedStmt->bind_param('sdss', $seedName, $seedPrice, $seedDescription, $seedImage);
+                    $seedStmt->execute();
+                }
+                $seedStmt->close();
+            }
+        }
+    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_menu_item'])) {
