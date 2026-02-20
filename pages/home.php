@@ -19,7 +19,7 @@
                     <a href="#third-container">Offers</a>
                 </div>
                 <div class="nav-cta">
-                    <a href="../pages/login.php" id="order-online">Order Online</a>
+                    <a href="../pages/admin-login.php" id="order-online">Admin Login</a>
                     <a href="../pages/admin-login.php" id="admin-login" aria-label="Administrator Login">
                         <span class="admin-icon" aria-hidden="true">&#9881;</span>
                     </a>

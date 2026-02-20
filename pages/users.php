@@ -1,10 +1,5 @@
 <?php
-session_start();
-
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit();
-}
+require_once '../includes/require_admin.php';
 
 $username = $_SESSION['username'] ?? 'User';
 $initial = strtoupper(substr($username, 0, 1));
@@ -218,4 +213,5 @@ $users = [
 <script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 </html>
+
 

@@ -18,5 +18,5 @@ CREATE TABLE IF NOT EXISTS menu_items (
 );
 
 INSERT INTO users (username, password)
-VALUES ('demo', '$2y$10$H4LRuYh8zV6HnSgG0mOwzOdSHbWKV3GRj81K.T3fAukL1NhvFJ9tm')
+VALUES ('admin', '$2y$12$iKHfElzBn9l1D5WH8RqmQ.xJL2X7PvgZoGWjY8PsdaJq5ChS56RN.')
 ON DUPLICATE KEY UPDATE username = VALUES(username);

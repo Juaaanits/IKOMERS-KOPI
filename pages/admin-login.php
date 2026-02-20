@@ -4,6 +4,30 @@ require_once '../includes/db.php';
 
 $loginResult = '';
 $usernameValue = '';
+$defaultAdminUsername = 'admin';
+$defaultAdminPassword = 'Admin@12345';
+
+if ($conn && $conn instanceof mysqli && $conn->connect_errno === 0) {
+    // Ensure a default admin account exists for first-time setup.
+    $checkAdmin = $conn->prepare('SELECT id FROM users WHERE username = ? LIMIT 1');
+    if ($checkAdmin) {
+        $checkAdmin->bind_param('s', $defaultAdminUsername);
+        $checkAdmin->execute();
+        $checkAdmin->store_result();
+        $adminExists = $checkAdmin->num_rows > 0;
+        $checkAdmin->close();
+
+        if (!$adminExists) {
+            $seedPassword = password_hash($defaultAdminPassword, PASSWORD_DEFAULT);
+            $insertAdmin = $conn->prepare('INSERT INTO users (username, password) VALUES (?, ?)');
+            if ($insertAdmin) {
+                $insertAdmin->bind_param('ss', $defaultAdminUsername, $seedPassword);
+                $insertAdmin->execute();
+                $insertAdmin->close();
+            }
+        }
+    }
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login-btn'])) {
     $usernameValue = trim($_POST['username'] ?? '');
@@ -27,12 +51,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login-btn'])) {
                     $stmt->bind_result($userId, $dbUsername, $dbPassword);
                     $stmt->fetch();
 
-                    if (password_verify($password, $dbPassword) || $password === $dbPassword) {
+                    if (
+                        strcasecmp($dbUsername, $defaultAdminUsername) === 0
+                        && (password_verify($password, $dbPassword) || $password === $dbPassword)
+                    ) {
                         $authenticated = true;
                         $username = $dbUsername;
+                    } else {
+                        $loginResult = 'Only administrator access is allowed.';
                     }
                 } else {
-                    $loginResult = 'Account not found.';
+                    $loginResult = 'Administrator account not found.';
                 }
 
                 $stmt->close();
@@ -47,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login-btn'])) {
             session_regenerate_id(true);
             $_SESSION['user_id'] = $userId;
             $_SESSION['username'] = $username;
+            $_SESSION['is_admin'] = true;
 
             header('Location: dashboard.php');
             exit();
@@ -115,7 +145,7 @@ if ($conn && $conn instanceof mysqli) {
                 <?php endif; ?>
             </form>
             <div class="register-link">
-                <p>Looking for the guest portal? <a href="login.php">Switch to guest login</a></p>
+                <p>Only administrator login is enabled for this system.</p>
             </div>
         </div>
     </section>

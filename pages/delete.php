@@ -1,13 +1,7 @@
 <?php
-session_start();
 header('Content-Type: application/json');
+require_once '../includes/require_admin_api.php';
 require_once '../includes/db.php';
-
-if (!isset($_SESSION['user_id'])) {
-    http_response_code(401);
-    echo json_encode(['ok' => false, 'message' => 'Unauthorized']);
-    exit;
-}
 
 $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
 if ($id <= 0) {
