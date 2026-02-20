@@ -359,6 +359,112 @@ a:focus {
     text-transform: uppercase;
 }
 
+.app-notice-root {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1600;
+    display: grid;
+    gap: 12px;
+    pointer-events: none;
+}
+
+.app-notice {
+    pointer-events: auto;
+    width: min(320px, 88vw);
+    background: linear-gradient(180deg, #f2463e 0%, #e43b33 100%);
+    color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 14px 30px rgba(198, 38, 34, 0.28);
+    padding: 14px 14px 12px;
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    gap: 10px;
+    align-items: start;
+    animation: appNoticeIn 220ms ease-out;
+}
+
+.app-notice.is-closing {
+    animation: appNoticeOut 220ms ease-in forwards;
+}
+
+.app-notice__icon {
+    font-size: 1.9rem;
+    line-height: 1;
+    font-weight: 800;
+}
+
+.app-notice__content h4 {
+    margin: 0 0 4px;
+    font-size: 1.08rem;
+    font-weight: 700;
+}
+
+.app-notice__content p {
+    margin: 0 0 10px;
+    font-size: 0.92rem;
+    opacity: 0.95;
+}
+
+.app-notice__btn {
+    border: 0;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    font-weight: 700;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.app-notice__btn:hover {
+    background: rgba(255, 255, 255, 0.24);
+}
+
+.app-notice__actions {
+    display: flex;
+    gap: 8px;
+}
+
+.app-notice__btn--cancel {
+    background: rgba(255, 255, 255, 0.16);
+}
+
+.app-notice__btn--ok {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.app-notice--success {
+    background: linear-gradient(180deg, #19b86f 0%, #12a05f 100%);
+    box-shadow: 0 14px 30px rgba(18, 160, 95, 0.28);
+}
+
+.app-notice--info {
+    background: linear-gradient(180deg, #2d91e0 0%, #257cc2 100%);
+    box-shadow: 0 14px 30px rgba(37, 124, 194, 0.28);
+}
+
+@keyframes appNoticeIn {
+    from {
+        transform: translateY(-10px) scale(0.98);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes appNoticeOut {
+    from {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(-8px) scale(0.98);
+        opacity: 0;
+    }
+}
+
 .profile-modal-open {
     overflow: hidden;
 }

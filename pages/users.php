@@ -218,7 +218,8 @@ $users = [
         </section>
     </main>
 </div>
-<script src="../assets/js/custom/users.js"></script>
+<script src="../assets/js/notify.js?v=<?php echo filemtime(__DIR__ . '/../assets/js/notify.js'); ?>"></script>
+<script src="../assets/js/custom/users.js?v=<?php echo filemtime(__DIR__ . '/../assets/js/custom/users.js'); ?>"></script>
 <script src="../assets/js/account-menu.js?v=<?php echo filemtime(__DIR__ . '/../assets/js/account-menu.js'); ?>"></script>
 <script src="../assets/js/sidebar-toggle.js"></script>
 </body>

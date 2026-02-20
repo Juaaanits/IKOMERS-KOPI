@@ -272,11 +272,6 @@ if ($conn && $conn instanceof mysqli) {
         </header>
 
         <section class="menu-page" aria-label="Menu items">
-            <?php if ($menuResult !== ''): ?>
-                <div class="menu-feedback menu-feedback--<?php echo $menuResultType === 'success' ? 'success' : 'error'; ?>">
-                    <?php echo htmlspecialchars($menuResult); ?>
-                </div>
-            <?php endif; ?>
             <div class="menu-page__header">
                 <div>
                     <p class="eyebrow">Cafe Shop</p>
@@ -400,9 +395,21 @@ if ($conn && $conn instanceof mysqli) {
         </section>
     </main>
 </div>
-<script src="../assets/js/custom/menu.js"></script>
+<script src="../assets/js/notify.js?v=<?php echo filemtime(__DIR__ . '/../assets/js/notify.js'); ?>"></script>
+<script src="../assets/js/custom/menu.js?v=<?php echo filemtime(__DIR__ . '/../assets/js/custom/menu.js'); ?>"></script>
 <script src="../assets/js/account-menu.js?v=<?php echo filemtime(__DIR__ . '/../assets/js/account-menu.js'); ?>"></script>
 <script src="../assets/js/sidebar-toggle.js"></script>
+<?php if ($menuResult !== ''): ?>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    window.showAppNotice?.(
+      <?php echo json_encode($menuResult); ?>,
+      <?php echo json_encode($menuResultType === 'success' ? 'success' : 'error'); ?>,
+      <?php echo json_encode($menuResultType === 'success' ? 'Success' : 'Error'); ?>
+    );
+  });
+</script>
+<?php endif; ?>
 </body>
 </html>
 

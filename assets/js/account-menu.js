@@ -213,7 +213,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       const data = await response.json();
       if (!response.ok || !data?.ok) {
-        alert(data?.message || "Failed to save profile.");
+        window.showAppNotice?.(data?.message || "Failed to save profile.", "error");
         return;
       }
 
@@ -223,9 +223,9 @@ document.addEventListener("DOMContentLoaded", () => {
       profileState.role = data.profile?.role || profileState.role;
       renderProfile();
       closeEditModal();
-      alert(data.message || "Profile updated successfully.");
+      window.showAppNotice?.(data.message || "Profile updated successfully.", "success");
     } catch {
-      alert("Unable to save profile right now.");
+      window.showAppNotice?.("Unable to save profile right now.", "error");
     }
   });
 
@@ -252,4 +252,3 @@ document.addEventListener("DOMContentLoaded", () => {
   renderProfile();
   loadProfile();
 });
-

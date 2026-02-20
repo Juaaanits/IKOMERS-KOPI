@@ -273,7 +273,17 @@ if ($conn && $conn instanceof mysqli) {
                                 <td><span class="status-pill status-pill--<?php echo $statusClass; ?>"><?php echo htmlspecialchars($order['status']); ?></span></td>
                                 <td><?php echo htmlspecialchars($order['date']); ?></td>
                                 <td class="actions-cell">
-                                    <button type="button" class="icon-btn icon-btn--view" aria-label="View order">
+                                    <button
+                                        type="button"
+                                        class="icon-btn icon-btn--view js-view-order"
+                                        aria-label="View order"
+                                        data-id="<?php echo (int) $order['id']; ?>"
+                                        data-customer="<?php echo htmlspecialchars($order['customer'], ENT_QUOTES); ?>"
+                                        data-items="<?php echo htmlspecialchars($order['items'], ENT_QUOTES); ?>"
+                                        data-total="<?php echo htmlspecialchars(number_format((float) $order['total'], 2, '.', ''), ENT_QUOTES); ?>"
+                                        data-date="<?php echo htmlspecialchars($order['date'], ENT_QUOTES); ?>"
+                                        data-status="<?php echo htmlspecialchars($order['status'], ENT_QUOTES); ?>"
+                                    >
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M3 12C3 12 6.5 6 12 6C17.5 6 21 12 21 12C21 12 17.5 18 12 18C6.5 18 3 12 3 12Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
                                             <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/>
@@ -461,6 +471,30 @@ if ($conn && $conn instanceof mysqli) {
                     </div>
                 </div>
             </dialog>
+
+            <dialog id="viewOrderModal" class="orders-modal">
+                <div class="orders-modal__card order-view-card">
+                    <header class="orders-modal__header">
+                        <div>
+                            <h3 id="viewOrderTitle">Order #0</h3>
+                            <p id="viewOrderDate" class="order-view-date"></p>
+                        </div>
+                        <button type="button" class="close-btn" id="closeViewOrderModal" aria-label="Close view order dialog">&times;</button>
+                    </header>
+
+                    <div class="order-view-section">
+                        <h4>Order Items</h4>
+                        <ul id="viewOrderItems" class="order-view-items"></ul>
+                        <p class="order-view-subtotal">Subtotal <span id="viewOrderSubtotal">$0.00</span></p>
+                    </div>
+
+                    <div class="order-view-footer">
+                        <div class="order-view-total">Total <strong id="viewOrderTotal">$0.00</strong></div>
+                        <button type="button" class="btn btn--print" id="printViewOrderBtn">Print Order</button>
+                        <button type="button" class="btn btn--close-order" id="cancelViewOrderModal">Close</button>
+                    </div>
+                </div>
+            </dialog>
         </section>
     </main>
 </div>
@@ -477,7 +511,8 @@ window.ordersStatusData = {
     colors: ['#6b35d9', '#17b7b2', '#f16521', '#c23dc4']
 };
 </script>
-<script src="../assets/js/custom/orders.js"></script>
+<script src="../assets/js/notify.js?v=<?php echo filemtime(__DIR__ . '/../assets/js/notify.js'); ?>"></script>
+<script src="../assets/js/custom/orders.js?v=<?php echo filemtime(__DIR__ . '/../assets/js/custom/orders.js'); ?>"></script>
 <script src="../assets/js/account-menu.js?v=<?php echo filemtime(__DIR__ . '/../assets/js/account-menu.js'); ?>"></script>
 <script src="../assets/js/sidebar-toggle.js"></script>
 </body>

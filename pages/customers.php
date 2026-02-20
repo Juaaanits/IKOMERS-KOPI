@@ -349,9 +349,9 @@ if ($conn && $conn instanceof mysqli) {
     </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="../assets/js/custom/customers.js"></script>
+<script src="../assets/js/notify.js?v=<?php echo filemtime(__DIR__ . '/../assets/js/notify.js'); ?>"></script>
+<script src="../assets/js/custom/customers.js?v=<?php echo filemtime(__DIR__ . '/../assets/js/custom/customers.js'); ?>"></script>
 <script src="../assets/js/account-menu.js?v=<?php echo filemtime(__DIR__ . '/../assets/js/account-menu.js'); ?>"></script>
 <script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 </html>
-

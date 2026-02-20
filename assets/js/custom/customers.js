@@ -91,7 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const data = await parseJsonResponse(res);
 
     if (!data.ok) {
-      alert(data.message || "Delete failed");
+      window.showAppNotice?.(data.message || "Delete failed", "error");
       return;
     }
 
@@ -119,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const data = await parseJsonResponse(res);
 
     if (!data.ok) {
-      alert(data.message || "Update failed");
+      window.showAppNotice?.(data.message || "Update failed", "error");
       return;
     }
 

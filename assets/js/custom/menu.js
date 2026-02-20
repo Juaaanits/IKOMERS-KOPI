@@ -49,7 +49,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (deleteBtn) {
       const id = deleteBtn.dataset.id;
       if (!id) return;
-      if (!confirm("Delete this menu item?")) return;
+      const shouldDelete = await (window.showAppConfirm?.("Delete this menu item?", "Delete Item") ?? Promise.resolve(true));
+      if (!shouldDelete) return;
 
       const fd = new FormData();
       fd.append("id", id);
@@ -58,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await parseJsonResponse(res);
 
       if (!data.ok) {
-        alert(data.message || "Delete failed.");
+        window.showAppNotice?.(data.message || "Delete failed.", "error");
         return;
       }
 
@@ -94,7 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
     event.preventDefault();
     const idValue = (itemIdInput?.value || "").trim();
     if (!idValue) {
-      alert("Invalid item ID for edit.");
+      window.showAppNotice?.("Invalid item ID for edit.", "error");
       return;
     }
 
@@ -105,7 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const data = await parseJsonResponse(res);
 
     if (!data.ok) {
-      alert(data.message || "Update failed.");
+      window.showAppNotice?.(data.message || "Update failed.", "error");
       return;
     }
 

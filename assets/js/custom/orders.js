@@ -15,6 +15,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveStatusModal = document.getElementById("saveStatusModal");
   const statusOrderLabel = document.getElementById("statusOrderLabel");
   const statusSelect = document.getElementById("statusSelect");
+  const viewOrderModal = document.getElementById("viewOrderModal");
+  const closeViewOrderModal = document.getElementById("closeViewOrderModal");
+  const cancelViewOrderModal = document.getElementById("cancelViewOrderModal");
+  const printViewOrderBtn = document.getElementById("printViewOrderBtn");
+  const viewOrderTitle = document.getElementById("viewOrderTitle");
+  const viewOrderDate = document.getElementById("viewOrderDate");
+  const viewOrderItems = document.getElementById("viewOrderItems");
+  const viewOrderSubtotal = document.getElementById("viewOrderSubtotal");
+  const viewOrderTotal = document.getElementById("viewOrderTotal");
 
   const openDialog = (dlg) => dlg?.showModal();
   const closeDialog = (dlg) => dlg?.close();
@@ -40,6 +49,63 @@ document.addEventListener("DOMContentLoaded", () => {
   closeStatusModal?.addEventListener("click", () => closeDialog(statusModal));
   cancelStatusModal?.addEventListener("click", () => closeDialog(statusModal));
   saveStatusModal?.addEventListener("click", () => closeDialog(statusModal));
+
+  document.querySelectorAll(".js-view-order").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id || "0";
+      const date = btn.dataset.date || "-";
+      const total = btn.dataset.total || "0.00";
+      const itemsRaw = (btn.dataset.items || "").trim();
+
+      if (viewOrderTitle) viewOrderTitle.textContent = `Order #${id}`;
+      if (viewOrderDate) viewOrderDate.textContent = date;
+      if (viewOrderTotal) viewOrderTotal.textContent = `$${total}`;
+
+      if (viewOrderItems) {
+        const itemRows = itemsRaw
+          ? itemsRaw.split(",").map((item) => item.trim()).filter(Boolean)
+          : [];
+        let subtotal = 0;
+
+        viewOrderItems.innerHTML = itemRows.length
+          ? itemRows
+              .map((item) => {
+                const normalized = item.replace(/\s+/g, " ").trim();
+                const match = normalized.match(/^(\d+)\s*x\s*(.+?)\s*\(\$?([\d.]+)\)$/i);
+
+                const qty = match ? Number.parseInt(match[1], 10) : 1;
+                const name = match ? match[2] : normalized;
+                const price = match ? Number.parseFloat(match[3]) : Number.NaN;
+
+                if (!Number.isNaN(price)) {
+                  subtotal += qty * price;
+                }
+
+                const priceText = Number.isNaN(price) ? "-" : `$${price.toFixed(2)}`;
+                return `
+                <li class="order-item-row">
+                  <div class="order-item-thumb" aria-hidden="true"><span>IMG</span></div>
+                  <div class="order-item-meta">
+                    <p class="order-item-name">${name}</p>
+                    <p class="order-item-sub">Quantity: ${qty} <span>&#9679;</span> ${priceText}</p>
+                  </div>
+                </li>`;
+              })
+              .join("")
+          : '<li class="order-item-row"><div class="order-item-meta"><p class="order-item-name">No items listed.</p></div></li>';
+
+        if (viewOrderSubtotal) {
+          viewOrderSubtotal.textContent = `$${(itemRows.length ? subtotal : Number.parseFloat(total) || 0).toFixed(2)}`;
+        }
+      }
+
+      openDialog(viewOrderModal);
+    });
+  });
+
+  closeViewOrderModal?.addEventListener("click", () => closeDialog(viewOrderModal));
+  cancelViewOrderModal?.addEventListener("click", () => closeDialog(viewOrderModal));
+  printViewOrderBtn?.addEventListener("click", () => window.print());
 
   // Order status donut
   const statusCtx = document.getElementById("orderStatusChart");
