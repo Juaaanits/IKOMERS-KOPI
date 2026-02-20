@@ -265,7 +265,7 @@ if ($conn && $conn instanceof mysqli) {
                     <div class="account-dropdown__head">
                         <strong><?php echo htmlspecialchars($username); ?></strong>
                     </div>
-                    <a href="users.php">My Profile</a>
+                    <a href="users.php" class="js-my-profile-link">My Profile</a>
                     <a href="logout.php" class="danger">Sign Out</a>
                 </div>
             </div>
@@ -401,7 +401,7 @@ if ($conn && $conn instanceof mysqli) {
     </main>
 </div>
 <script src="../assets/js/custom/menu.js"></script>
-<script src="../assets/js/account-menu.js"></script>
+<script src="../assets/js/account-menu.js?v=<?php echo filemtime(__DIR__ . '/../assets/js/account-menu.js'); ?>"></script>
 <script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 </html>

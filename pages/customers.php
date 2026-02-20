@@ -140,7 +140,7 @@ $stats = [
                     <div class="account-dropdown__head">
                         <strong><?php echo htmlspecialchars($username); ?></strong>
                     </div>
-                    <a href="users.php">My Profile</a>
+                    <a href="users.php" class="js-my-profile-link">My Profile</a>
                     <a href="logout.php" class="danger">Sign Out</a>
                 </div>
             </div>
@@ -319,7 +319,7 @@ $stats = [
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="../assets/js/custom/customers.js"></script>
-<script src="../assets/js/account-menu.js"></script>
+<script src="../assets/js/account-menu.js?v=<?php echo filemtime(__DIR__ . '/../assets/js/account-menu.js'); ?>"></script>
 <script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 </html>
