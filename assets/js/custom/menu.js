@@ -25,78 +25,94 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const resetToAddMode = () => {
+    if (form) form.dataset.mode = "add";
     if (itemIdInput) itemIdInput.value = "";
     if (modalTitle) modalTitle.textContent = "Add New Menu Item";
-    if (submitBtn) submitBtn.textContent = "Add Item";
+    if (submitBtn) {
+      submitBtn.textContent = "Add Item";
+      submitBtn.setAttribute("name", "add_menu_item");
+      submitBtn.setAttribute("value", "1");
+    }
     if (fileInput) fileInput.required = true;
   };
 
-fab?.addEventListener("click", () => {
-  resetToAddMode();
-  openModal();
-});
+  const openModal = () => modal?.showModal();
+  const closeModalDialog = () => modal?.close();
 
-document.addEventListener("click", async (event) => {
-  const deleteBtn = event.target.closest(".js-delete-item");
-  if (deleteBtn) {
-    const id = deleteBtn.dataset.id;
-    if (!id) return;
-    if (!confirm("Delete this menu item?")) return;
+  fab?.addEventListener("click", () => {
+    resetToAddMode();
+    openModal();
+  });
 
-    const fd = new FormData();
-    fd.append("id", id);
+  document.addEventListener("click", async (event) => {
+    const deleteBtn = event.target.closest(".js-delete-item");
+    if (deleteBtn) {
+      const id = deleteBtn.dataset.id;
+      if (!id) return;
+      if (!confirm("Delete this menu item?")) return;
 
-    const res = await fetch("delete.php", { method: "POST", body: fd });
-    const data = await parseJsonResponse(res);
+      const fd = new FormData();
+      fd.append("id", id);
 
-    if (!data.ok) {
-      alert(data.message || "Delete failed.");
+      const res = await fetch("delete.php", { method: "POST", body: fd });
+      const data = await parseJsonResponse(res);
+
+      if (!data.ok) {
+        alert(data.message || "Delete failed.");
+        return;
+      }
+
+      const card = deleteBtn.closest(".menu-card");
+      if (card) card.remove();
       return;
     }
 
-    const card = deleteBtn.closest(".menu-card");
-    if (card) card.remove();
-    return;
-  }
-
-  const editBtn = event.target.closest(".js-edit-item");
+    const editBtn = event.target.closest(".js-edit-item");
     if (editBtn) {
       resetToAddMode();
-      if (itemIdInput) itemIdInput.value = editBtn.dataset.id || "";
+      if (form) form.dataset.mode = "edit";
+      if (itemIdInput) itemIdInput.value = (editBtn.dataset.id || "").trim();
       if (nameInput) nameInput.value = editBtn.dataset.name || "";
       if (priceInput) priceInput.value = editBtn.dataset.price || "";
       if (descInput) descInput.value = editBtn.dataset.description || "";
       if (modalTitle) modalTitle.textContent = "Edit Menu Item";
-      if (submitBtn) submitBtn.textContent = "Save Changes";
+      if (submitBtn) {
+        submitBtn.textContent = "Save Changes";
+        // Prevent add endpoint from being triggered in edit mode.
+        submitBtn.removeAttribute("name");
+        submitBtn.removeAttribute("value");
+      }
       if (fileInput) fileInput.required = false;
       openModal();
     }
   });
 
-form?.addEventListener("submit", async (event) => {
-  const isEdit = !!itemIdInput?.value;
-  if (!isEdit) return; // let your current add flow submit normally
+  form?.addEventListener("submit", async (event) => {
+    const isEditMode = form?.dataset.mode === "edit";
+    if (!isEditMode) return; // add mode uses normal form submit
 
-  event.preventDefault();
-  const fd = new FormData(form);
-  fd.append("id", itemIdInput.value);
+    event.preventDefault();
+    const idValue = (itemIdInput?.value || "").trim();
+    if (!idValue) {
+      alert("Invalid item ID for edit.");
+      return;
+    }
 
-  const res = await fetch("update.php", { method: "POST", body: fd });
-  const data = await parseJsonResponse(res);
+    const fd = new FormData(form);
+    fd.set("id", idValue);
 
-  if (!data.ok) {
-    alert(data.message || "Update failed.");
-    return;
-  }
+    const res = await fetch("update.php", { method: "POST", body: fd });
+    const data = await parseJsonResponse(res);
 
-  // easiest refresh to reflect card changes
-  window.location.reload();
-});
+    if (!data.ok) {
+      alert(data.message || "Update failed.");
+      return;
+    }
 
-  const openModal = () => modal?.showModal();
-  const closeModalDialog = () => modal?.close();
+    // easiest refresh to reflect card changes
+    window.location.reload();
+  });
 
-  fab?.addEventListener("click", openModal);
   closeModal?.addEventListener("click", closeModalDialog);
   cancelBtn?.addEventListener("click", closeModalDialog);
 

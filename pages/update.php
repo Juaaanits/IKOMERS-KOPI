@@ -30,41 +30,71 @@ if (!$item) {
 $newImagePath = $item['image_path'];
 $oldImagePath = $item['image_path'];
 
-if (isset($_FILES['image']) && is_array($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-    $tmpFile = $_FILES['image']['tmp_name'];
-    $originalName = $_FILES['image']['name'] ?? '';
-    $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-    $mimeType = function_exists('mime_content_type') ? mime_content_type($tmpFile) : '';
-    $allowedExt = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-    $allowedMime = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+if (isset($_FILES['image']) && is_array($_FILES['image'])) {
+    $uploadError = (int) ($_FILES['image']['error'] ?? UPLOAD_ERR_NO_FILE);
 
-    if (!in_array($extension, $allowedExt, true) || !in_array($mimeType, $allowedMime, true)) {
+    if ($uploadError !== UPLOAD_ERR_OK && $uploadError !== UPLOAD_ERR_NO_FILE) {
+        $message = 'Image upload failed.';
+        if ($uploadError === UPLOAD_ERR_INI_SIZE || $uploadError === UPLOAD_ERR_FORM_SIZE) {
+            $message = 'Image is too large for server upload limit.';
+        } elseif ($uploadError === UPLOAD_ERR_PARTIAL) {
+            $message = 'Image upload was interrupted. Please try again.';
+        } else {
+            $message = 'Image upload failed (code ' . $uploadError . ').';
+        }
+
         http_response_code(400);
-        echo json_encode(['ok' => false, 'message' => 'Invalid image file']);
+        echo json_encode(['ok' => false, 'message' => $message]);
         exit;
     }
 
-    $menuDir = realpath(__DIR__ . '/../assets/uploads/menu');
-    if ($menuDir === false) {
-        $menuDir = __DIR__ . '/../assets/uploads/menu';
-        if (!is_dir($menuDir)) {
-            if (!mkdir($menuDir, 0775, true) && !is_dir($menuDir)) {
-                http_response_code(500);
-                echo json_encode(['ok' => false, 'message' => 'Failed to create upload directory']);
-                exit;
+    if ($uploadError === UPLOAD_ERR_OK) {
+        $tmpFile = $_FILES['image']['tmp_name'];
+        $originalName = $_FILES['image']['name'] ?? '';
+        $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+        $imageInfo = @getimagesize($tmpFile);
+        $mimeType = is_array($imageInfo) ? ($imageInfo['mime'] ?? '') : '';
+        $allowedExt = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+        $allowedMime = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        $mimeToExt = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            'image/gif' => 'gif'
+        ];
+
+        if ($extension === '' && isset($mimeToExt[$mimeType])) {
+            $extension = $mimeToExt[$mimeType];
+        }
+
+        if ($imageInfo === false || !in_array($extension, $allowedExt, true) || !in_array($mimeType, $allowedMime, true)) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'message' => 'Invalid image file']);
+            exit;
+        }
+
+        $menuDir = realpath(__DIR__ . '/../assets/uploads/menu');
+        if ($menuDir === false) {
+            $menuDir = __DIR__ . '/../assets/uploads/menu';
+            if (!is_dir($menuDir)) {
+                if (!mkdir($menuDir, 0775, true) && !is_dir($menuDir)) {
+                    http_response_code(500);
+                    echo json_encode(['ok' => false, 'message' => 'Failed to create upload directory']);
+                    exit;
+                }
             }
         }
-    }
 
-    $fileName = bin2hex(random_bytes(8)) . '.' . $extension;
-    $target = $menuDir . DIRECTORY_SEPARATOR . $fileName;
-    if (!move_uploaded_file($tmpFile, $target)) {
-        http_response_code(500);
-        echo json_encode(['ok' => false, 'message' => 'Failed to save image']);
-        exit;
-    }
+        $fileName = bin2hex(random_bytes(8)) . '.' . $extension;
+        $target = $menuDir . DIRECTORY_SEPARATOR . $fileName;
+        if (!move_uploaded_file($tmpFile, $target)) {
+            http_response_code(500);
+            echo json_encode(['ok' => false, 'message' => 'Failed to save image']);
+            exit;
+        }
 
-    $newImagePath = '../assets/uploads/menu/' . $fileName;
+        $newImagePath = '../assets/uploads/menu/' . $fileName;
+    }
 }
 
 $priceVal = (float)$price;

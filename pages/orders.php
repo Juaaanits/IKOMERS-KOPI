@@ -1,57 +1,115 @@
 <?php
 require_once '../includes/require_admin.php';
+require_once '../includes/db.php';
 
 $username = $_SESSION['username'] ?? 'User';
 $initial = strtoupper(substr($username, 0, 1));
 
-// Sample data to mirror the reference UI
-$orders = [
-    [
-        'id' => 132,
-        'customer' => 'Test Name',
-        'items' => '1x Cappuccino ($4.75)',
-        'total' => 4.75,
-        'status' => 'Processing',
-        'date' => '2025-01-06 11:00',
-    ],
-    [
-        'id' => 131,
-        'customer' => 'Maria Sanchez',
-        'items' => '1x Cappuccino ($4.75)',
-        'total' => 4.75,
-        'status' => 'Completed',
-        'date' => '2025-01-05 11:00',
-    ],
-    [
-        'id' => 130,
-        'customer' => 'David Kim',
-        'items' => '22x Americano ($3.75)',
-        'total' => 82.50,
-        'status' => 'Completed',
-        'date' => '2025-01-05 00:30',
-    ],
-    [
-        'id' => 129,
-        'customer' => 'Michael Bennett',
-        'items' => '1x Cappuccino ($4.75)',
-        'total' => 4.75,
-        'status' => 'Cancelled',
-        'date' => '2025-01-05 00:10',
-    ]
+$statusCounts = [
+    'Pending' => 0,
+    'Processing' => 0,
+    'Completed' => 0,
+    'Cancelled' => 0
 ];
 
-$statusCounts = [
-    'Pending' => 54,
-    'Processing' => 30,
-    'Completed' => 42,
-    'Cancelled' => 5
-];
+$orders = [];
+$orderResult = '';
+$orderResultType = '';
+
+$dbReady = $conn && $conn instanceof mysqli && $conn->connect_errno === 0;
+
+if ($dbReady) {
+    $conn->query(
+        "CREATE TABLE IF NOT EXISTS orders (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            customer_name VARCHAR(120) NOT NULL,
+            items TEXT NOT NULL,
+            total DECIMAL(10,2) NOT NULL,
+            status ENUM('Pending','Processing','Completed','Cancelled') NOT NULL DEFAULT 'Pending',
+            ordered_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )"
+    );
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_order'])) {
+    $customerName = trim($_POST['customer_name'] ?? '');
+    $items = trim($_POST['items'] ?? '');
+    $total = trim($_POST['total'] ?? '');
+    $status = trim($_POST['status'] ?? 'Pending');
+    $allowedStatuses = ['Pending', 'Processing', 'Completed', 'Cancelled'];
+
+    if (!$dbReady) {
+        $orderResult = 'Database is unavailable. Please try again later.';
+        $orderResultType = 'error';
+    } elseif ($customerName === '') {
+        $orderResult = 'Customer name is required.';
+        $orderResultType = 'error';
+    } elseif ($items === '') {
+        $orderResult = 'Order items are required.';
+        $orderResultType = 'error';
+    } elseif (!is_numeric($total) || (float) $total <= 0) {
+        $orderResult = 'Total must be a number greater than 0.';
+        $orderResultType = 'error';
+    } elseif (!in_array($status, $allowedStatuses, true)) {
+        $orderResult = 'Invalid order status.';
+        $orderResultType = 'error';
+    } else {
+        $insert = $conn->prepare('INSERT INTO orders (customer_name, items, total, status) VALUES (?, ?, ?, ?)');
+        if ($insert) {
+            $totalValue = (float) $total;
+            $insert->bind_param('ssds', $customerName, $items, $totalValue, $status);
+            if ($insert->execute()) {
+                $orderResult = 'Order added successfully.';
+                $orderResultType = 'success';
+            } else {
+                $orderResult = 'Failed to add order.';
+                $orderResultType = 'error';
+            }
+            $insert->close();
+        } else {
+            $orderResult = 'Unable to save order right now.';
+            $orderResultType = 'error';
+        }
+    }
+}
+
+if ($dbReady) {
+    $result = $conn->query('SELECT id, customer_name, items, total, status, ordered_at FROM orders ORDER BY id DESC');
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $orders[] = [
+                'id' => (int) $row['id'],
+                'customer' => $row['customer_name'],
+                'items' => $row['items'],
+                'total' => (float) $row['total'],
+                'status' => $row['status'],
+                'date' => date('Y-m-d H:i', strtotime($row['ordered_at']))
+            ];
+
+            if (isset($statusCounts[$row['status']])) {
+                $statusCounts[$row['status']]++;
+            }
+        }
+        $result->free();
+    }
+}
+
+$totalOrders = count($orders);
+$totalRevenue = 0.0;
+foreach ($orders as $orderRow) {
+    $totalRevenue += (float) $orderRow['total'];
+}
+$avgOrderValue = $totalOrders > 0 ? ($totalRevenue / $totalOrders) : 0.0;
 
 $metrics = [
-    'totalOrders' => 131,
-    'totalRevenue' => 869.00,
-    'avgOrderValue' => 6.90
+    'totalOrders' => $totalOrders,
+    'totalRevenue' => $totalRevenue,
+    'avgOrderValue' => $avgOrderValue
 ];
+
+if ($conn && $conn instanceof mysqli) {
+    $conn->close();
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -162,6 +220,11 @@ $metrics = [
         </header>
 
         <section class="orders-page" aria-label="Orders">
+            <?php if ($orderResult !== ''): ?>
+                <div class="menu-feedback menu-feedback--<?php echo $orderResultType === 'success' ? 'success' : 'error'; ?>">
+                    <?php echo htmlspecialchars($orderResult); ?>
+                </div>
+            <?php endif; ?>
             <div class="orders-header">
                 <div>
                     <p class="eyebrow">Cafe Orders</p>
@@ -193,49 +256,55 @@ $metrics = [
                         </tr>
                     </thead>
                     <tbody>
-                    <?php foreach ($orders as $order): ?>
-                        <?php
-                        $statusClass = strtolower($order['status']);
-                        ?>
+                    <?php if (empty($orders)): ?>
                         <tr>
-                            <td><?php echo htmlspecialchars($order['id']); ?></td>
-                            <td><?php echo htmlspecialchars($order['customer']); ?></td>
-                            <td><?php echo htmlspecialchars($order['items']); ?></td>
-                            <td><?php echo number_format($order['total'], 2); ?></td>
-                            <td><span class="status-pill status-pill--<?php echo $statusClass; ?>"><?php echo htmlspecialchars($order['status']); ?></span></td>
-                            <td><?php echo htmlspecialchars($order['date']); ?></td>
-                            <td class="actions-cell">
-                                <button type="button" class="icon-btn icon-btn--view" aria-label="View order">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M3 12C3 12 6.5 6 12 6C17.5 6 21 12 21 12C21 12 17.5 18 12 18C6.5 18 3 12 3 12Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/>
-                                    </svg>
-                                </button>
-                                <button type="button" class="icon-btn icon-btn--edit status-edit-btn" data-order="<?php echo htmlspecialchars($order['id']); ?>" data-status="<?php echo htmlspecialchars($order['status']); ?>" aria-label="Edit order">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M4 20H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                                        <path d="M15.5 4.5L19.5 8.5L10 18H6V14L15.5 4.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                </button>
-                                <button type="button" class="icon-btn icon-btn--delete" aria-label="Delete order">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M6 7H18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                                        <path d="M10 11V17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                                        <path d="M14 11V17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                                        <path d="M5 7L6 19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19L19 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <path d="M9 7V5C9 4.44772 9.44772 4 10 4H14C14.5523 4 15 4.44772 15 5V7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                </button>
-                            </td>
+                            <td colspan="7">No orders yet.</td>
                         </tr>
-                    <?php endforeach; ?>
+                    <?php else: ?>
+                        <?php foreach ($orders as $order): ?>
+                            <?php
+                            $statusClass = strtolower($order['status']);
+                            ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($order['id']); ?></td>
+                                <td><?php echo htmlspecialchars($order['customer']); ?></td>
+                                <td><?php echo htmlspecialchars($order['items']); ?></td>
+                                <td><?php echo number_format($order['total'], 2); ?></td>
+                                <td><span class="status-pill status-pill--<?php echo $statusClass; ?>"><?php echo htmlspecialchars($order['status']); ?></span></td>
+                                <td><?php echo htmlspecialchars($order['date']); ?></td>
+                                <td class="actions-cell">
+                                    <button type="button" class="icon-btn icon-btn--view" aria-label="View order">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M3 12C3 12 6.5 6 12 6C17.5 6 21 12 21 12C21 12 17.5 18 12 18C6.5 18 3 12 3 12Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/>
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="icon-btn icon-btn--edit status-edit-btn" data-order="<?php echo htmlspecialchars($order['id']); ?>" data-status="<?php echo htmlspecialchars($order['status']); ?>" aria-label="Edit order">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M4 20H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                            <path d="M15.5 4.5L19.5 8.5L10 18H6V14L15.5 4.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="icon-btn icon-btn--delete" aria-label="Delete order">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M6 7H18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                            <path d="M10 11V17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                            <path d="M14 11V17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                            <path d="M5 7L6 19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19L19 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M9 7V5C9 4.44772 9.44772 4 10 4H14C14.5523 4 15 4.44772 15 5V7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                     </tbody>
                 </table>
             </div>
 
             <div class="pagination">
                 <button type="button" aria-label="Previous page">&lt;</button>
-                <span>Page 1 of 27</span>
+                <span>Page 1</span>
                 <button type="button" aria-label="Next page">&gt;</button>
             </div>
 
@@ -290,7 +359,7 @@ $metrics = [
                         <label class="field customer-field field--full">
                             <span>Customer</span>
                             <div class="customer-row">
-                                <input type="text" placeholder="Customer Name" required>
+                                <input type="text" name="customer_name" placeholder="Customer Name" required>
                                 <input type="text" class="id-chip" placeholder="ID: #####" aria-label="Customer ID" disabled>
                                 <button type="button" class="icon-btn icon-btn--view" id="openSelectCustomer" aria-label="Select customer">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -302,37 +371,15 @@ $metrics = [
                         </label>
                         <div class="field field--full">
                             <span>Items</span>
-                            <button type="button" class="add-item-btn">Add Item</button>
-                            <table class="items-table">
-                                <thead>
-                                    <tr>
-                                        <th>Item</th>
-                                        <th>ID</th>
-                                        <th>Quantity</th>
-                                        <th>Price</th>
-                                        <th>Total</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Black Coffee</td>
-                                        <td>11</td>
-                                        <td>4</td>
-                                        <td>3.75</td>
-                                        <td>15.00</td>
-                                        <td><button type="button" class="icon-btn icon-btn--delete" aria-label="Remove item">&times;</button></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <textarea name="items" rows="3" placeholder="Example: 2x Cappuccino ($4.75), 1x Latte ($4.50)" required></textarea>
                         </div>
                         <label class="field">
                             <span>Total</span>
-                            <input type="text" placeholder="Total Amount" value="$15.00" disabled>
+                            <input type="number" name="total" step="0.01" min="0.01" placeholder="Total Amount" required>
                         </label>
                         <label class="field">
                             <span>Status</span>
-                            <select>
+                            <select name="status">
                                 <option>Pending</option>
                                 <option>Processing</option>
                                 <option>Completed</option>
@@ -342,7 +389,7 @@ $metrics = [
                     </div>
                     <div class="modal-actions">
                         <button type="button" class="btn btn--ghost" id="cancelOrderModal">Cancel</button>
-                        <button type="submit" class="btn btn--primary">Add Order</button>
+                        <button type="submit" class="btn btn--primary" name="add_order" value="1">Add Order</button>
                     </div>
                 </form>
             </dialog>
@@ -418,6 +465,18 @@ $metrics = [
     </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+window.ordersStatusData = {
+    labels: ['Pending', 'Processing', 'Completed', 'Cancelled'],
+    values: [
+        <?php echo (int) $statusCounts['Pending']; ?>,
+        <?php echo (int) $statusCounts['Processing']; ?>,
+        <?php echo (int) $statusCounts['Completed']; ?>,
+        <?php echo (int) $statusCounts['Cancelled']; ?>
+    ],
+    colors: ['#6b35d9', '#17b7b2', '#f16521', '#c23dc4']
+};
+</script>
 <script src="../assets/js/custom/orders.js"></script>
 <script src="../assets/js/account-menu.js"></script>
 <script src="../assets/js/sidebar-toggle.js"></script>

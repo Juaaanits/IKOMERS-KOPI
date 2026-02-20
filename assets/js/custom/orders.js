@@ -44,9 +44,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Order status donut
   const statusCtx = document.getElementById("orderStatusChart");
   const legend = document.getElementById("orderStatusLegend");
-  const statusData = {
+  const statusData = window.ordersStatusData || {
     labels: ["Pending", "Processing", "Completed", "Cancelled"],
-    values: [54, 30, 42, 5],
+    values: [0, 0, 0, 0],
     colors: ["#6b35d9", "#17b7b2", "#f16521", "#c23dc4"],
   };
 
@@ -75,7 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
     legend.innerHTML = statusData.labels
       .map((label, idx) => {
         const value = statusData.values[idx];
-        const pct = ((value / total) * 100).toFixed(1);
+        const pct = total > 0 ? ((value / total) * 100).toFixed(1) : "0.0";
         return `
         <div class="legend-row">
           <span class="legend-label">
