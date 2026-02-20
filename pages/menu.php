@@ -272,6 +272,7 @@ if ($conn && $conn instanceof mysqli) {
 
             <div class="menu-grid">
                 <?php foreach ($menuItems as $item): ?>
+                    <?php $hasId = isset($item['id']) && (int) $item['id'] > 0; ?>
                     <article class="menu-card">
                         <div class="menu-card__image" style="background-image: url('<?php echo htmlspecialchars($item['image']); ?>');" role="img" aria-label="<?php echo htmlspecialchars($item['name']); ?>"></div>
                         <div class="menu-card__body">
@@ -285,11 +286,12 @@ if ($conn && $conn instanceof mysqli) {
                                     type="button"
                                     class="icon-btn icon-btn--edit js-edit-item"
                                     aria-label="Edit item"
-                                    data-id="<?php echo (int)$item['id']; ?>"
+                                    data-id="<?php echo $hasId ? (int) $item['id'] : ''; ?>"
                                     data-name="<?php echo htmlspecialchars($item['name'], ENT_QUOTES); ?>"
                                     data-price="<?php echo htmlspecialchars(number_format((float)$item['price'], 2, '.', ''), ENT_QUOTES); ?>"
                                     data-description="<?php echo htmlspecialchars($item['description'] ?? '', ENT_QUOTES); ?>"
                                     data-image="<?php echo htmlspecialchars($item['image'] ?? '', ENT_QUOTES); ?>"
+                                    <?php echo $hasId ? '' : 'disabled title="Demo item cannot be edited"'; ?>
                                 >
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M4 20H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
@@ -301,7 +303,8 @@ if ($conn && $conn instanceof mysqli) {
                                     type="button"
                                     class="icon-btn icon-btn--delete js-delete-item"
                                     aria-label="Delete item"
-                                    data-id="<?php echo (int)$item['id']; ?>"
+                                    data-id="<?php echo $hasId ? (int) $item['id'] : ''; ?>"
+                                    <?php echo $hasId ? '' : 'disabled title="Demo item cannot be deleted"'; ?>
                                 >
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M6 7H18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
