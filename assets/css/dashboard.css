@@ -191,6 +191,18 @@ a:focus {
         display: none;
     }
 
+    .dashboard-layout.sidebar-collapsed .brand .brand-icon {
+        display: none;
+    }
+
+    .dashboard-layout.sidebar-collapsed .brand {
+        justify-content: center;
+    }
+
+    .dashboard-layout.sidebar-collapsed .sidebar-toggle {
+        margin-left: 0;
+    }
+
     .dashboard-layout.sidebar-collapsed .sidebar-nav a > span:not(.nav-icon) {
         display: none;
     }
