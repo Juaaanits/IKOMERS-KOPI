@@ -89,6 +89,7 @@ if ($dbReady) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_order'])) {
+    $orderId = isset($_POST['order_id']) ? (int) $_POST['order_id'] : 0;
     $customerName = trim($_POST['customer_name'] ?? '');
     $items = trim($_POST['items'] ?? '');
     $total = trim($_POST['total'] ?? '');
@@ -111,21 +112,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_order'])) {
         $orderResult = 'Invalid order status.';
         $orderResultType = 'error';
     } else {
-        $insert = $conn->prepare('INSERT INTO orders (customer_name, items, total, status) VALUES (?, ?, ?, ?)');
-        if ($insert) {
-            $totalValue = (float) $total;
-            $insert->bind_param('ssds', $customerName, $items, $totalValue, $status);
-            if ($insert->execute()) {
-                $orderResult = 'Order added successfully.';
-                $orderResultType = 'success';
+        $totalValue = (float) $total;
+
+        if ($orderId > 0) {
+            $update = $conn->prepare('UPDATE orders SET customer_name = ?, items = ?, total = ?, status = ? WHERE id = ?');
+            if ($update) {
+                $update->bind_param('ssdsi', $customerName, $items, $totalValue, $status, $orderId);
+                if ($update->execute()) {
+                    $orderResult = 'Order updated successfully.';
+                    $orderResultType = 'success';
+                } else {
+                    $orderResult = 'Failed to update order.';
+                    $orderResultType = 'error';
+                }
+                $update->close();
             } else {
-                $orderResult = 'Failed to add order.';
+                $orderResult = 'Unable to update order right now.';
                 $orderResultType = 'error';
             }
-            $insert->close();
         } else {
-            $orderResult = 'Unable to save order right now.';
-            $orderResultType = 'error';
+            $insert = $conn->prepare('INSERT INTO orders (customer_name, items, total, status) VALUES (?, ?, ?, ?)');
+            if ($insert) {
+                $insert->bind_param('ssds', $customerName, $items, $totalValue, $status);
+                if ($insert->execute()) {
+                    $orderResult = 'Order added successfully.';
+                    $orderResultType = 'success';
+                } else {
+                    $orderResult = 'Failed to add order.';
+                    $orderResultType = 'error';
+                }
+                $insert->close();
+            } else {
+                $orderResult = 'Unable to save order right now.';
+                $orderResultType = 'error';
+            }
         }
     }
 }
@@ -380,7 +400,17 @@ if ($conn && $conn instanceof mysqli) {
                                             <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/>
                                         </svg>
                                     </button>
-                                    <button type="button" class="icon-btn icon-btn--edit js-edit-order" data-order-id="<?php echo (int) $order['id']; ?>" data-status="<?php echo htmlspecialchars($order['status']); ?>" aria-label="Edit order">
+                                    <button
+                                        type="button"
+                                        class="icon-btn icon-btn--edit js-edit-order"
+                                        data-order-id="<?php echo (int)$order['id']; ?>"
+                                        data-customer="<?php echo htmlspecialchars($order['customer'], ENT_QUOTES); ?>"
+                                        data-items="<?php echo htmlspecialchars($order['items'], ENT_QUOTES); ?>"
+                                        data-total="<?php echo htmlspecialchars(number_format((float)$order['total'], 2, '.', ''), ENT_QUOTES); ?>"
+                                        data-status="<?php echo htmlspecialchars($order['status'], ENT_QUOTES); ?>"
+                                        aria-label="Edit order"
+                                        >
+
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M4 20H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                                             <path d="M15.5 4.5L19.5 8.5L10 18H6V14L15.5 4.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -468,6 +498,8 @@ if ($conn && $conn instanceof mysqli) {
                         <h3>Add New Order</h3>
                         <button type="button" class="close-btn" id="closeOrderModal" aria-label="Close add order form">&times;</button>
                     </header>
+                            
+                    <input type="hidden" name="order_id" id="order-id" value="">
 
                     <div class="order-create-grid">
                         <label class="field customer-field field--full">
@@ -643,4 +675,3 @@ window.ordersStatusData = {
 <script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 </html>
-
