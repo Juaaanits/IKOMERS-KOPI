@@ -10,6 +10,10 @@ $menuResultType = '';
 $nameValue = '';
 $priceValue = '';
 $descriptionValue = '';
+$categoryValue = 'Uncategorized';
+$searchValue = trim($_GET['search'] ?? '');
+$categoryFilter = trim($_GET['category'] ?? 'all');
+$categoryOptions = ['Espresso', 'Cold Brew', 'Tea', 'Non-Coffee', 'Pastry', 'Uncategorized'];
 
 $dbReady = $conn && $conn instanceof mysqli && $conn->connect_errno === 0;
 
@@ -18,6 +22,7 @@ if ($dbReady) {
         "CREATE TABLE IF NOT EXISTS menu_items (
             id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(120) NOT NULL,
+            category VARCHAR(50) NOT NULL DEFAULT 'Uncategorized',
             price DECIMAL(10,2) NOT NULL,
             description TEXT NULL,
             image_path VARCHAR(255) NOT NULL,
@@ -25,12 +30,26 @@ if ($dbReady) {
         )"
     );
 
+    $categoryColumnResult = $conn->query("SHOW COLUMNS FROM menu_items LIKE 'category'");
+    $hasCategoryColumn = $categoryColumnResult && $categoryColumnResult->num_rows > 0;
+    if ($categoryColumnResult) {
+        $categoryColumnResult->free();
+    }
+    if (!$hasCategoryColumn) {
+        $conn->query("ALTER TABLE menu_items ADD COLUMN category VARCHAR(50) NOT NULL DEFAULT 'Uncategorized' AFTER name");
+    }
+
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_menu_item']) && empty($_POST['item_id'])) {
     $nameValue = trim($_POST['name'] ?? '');
+    $categoryValue = trim($_POST['category'] ?? 'Uncategorized');
     $priceValue = trim($_POST['price'] ?? '');
     $descriptionValue = trim($_POST['description'] ?? '');
+
+    if (!in_array($categoryValue, $categoryOptions, true)) {
+        $categoryValue = 'Uncategorized';
+    }
 
     if (!$dbReady) {
         $menuResult = 'Database is unavailable. Please try again later.';
@@ -110,19 +129,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_menu_item']) && e
                         $menuResult = 'Failed to save uploaded image.';
                         $menuResultType = 'error';
                     } else {
-                        $insert = $conn->prepare('INSERT INTO menu_items (name, price, description, image_path) VALUES (?, ?, ?, ?)');
+                        $insert = $conn->prepare('INSERT INTO menu_items (name, category, price, description, image_path) VALUES (?, ?, ?, ?, ?)');
                         if (!$insert) {
                             @unlink($targetPath);
                             $menuResult = 'Unable to save menu item right now.';
                             $menuResultType = 'error';
                         } else {
                             $priceAsDecimal = (float) $priceValue;
-                            $insert->bind_param('sdss', $nameValue, $priceAsDecimal, $descriptionValue, $dbImagePath);
+                            $insert->bind_param('ssdss', $nameValue, $categoryValue, $priceAsDecimal, $descriptionValue, $dbImagePath);
 
                             if ($insert->execute()) {
                                 $menuResult = 'Menu item added successfully.';
                                 $menuResultType = 'success';
                                 $nameValue = '';
+                                $categoryValue = 'Uncategorized';
                                 $priceValue = '';
                                 $descriptionValue = '';
                             } else {
@@ -140,12 +160,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_menu_item']) && e
 }
 
 if ($dbReady) {
-    $result = $conn->query('SELECT id, name, price, description, image_path AS image FROM menu_items ORDER BY id DESC');
-    if ($result) {
-        while ($row = $result->fetch_assoc()) {
-            $menuItems[] = $row;
+    $where = [];
+    $params = [];
+    $types = '';
+
+    if ($searchValue !== '') {
+        $where[] = '(name LIKE ? OR description LIKE ? OR category LIKE ?)';
+        $searchLike = '%' . $searchValue . '%';
+        $params[] = $searchLike;
+        $params[] = $searchLike;
+        $params[] = $searchLike;
+        $types .= 'sss';
+    }
+
+    if ($categoryFilter !== '' && strtolower($categoryFilter) !== 'all') {
+        $where[] = 'category = ?';
+        $params[] = $categoryFilter;
+        $types .= 's';
+    } else {
+        $categoryFilter = 'all';
+    }
+
+    $sql = 'SELECT id, name, category, price, description, image_path AS image FROM menu_items';
+    if (!empty($where)) {
+        $sql .= ' WHERE ' . implode(' AND ', $where);
+    }
+    $sql .= ' ORDER BY id DESC';
+
+    $stmt = $conn->prepare($sql);
+    if ($stmt) {
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
         }
-        $result->free();
+
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $menuItems[] = $row;
+                if (!in_array($row['category'], $categoryOptions, true)) {
+                    $categoryOptions[] = $row['category'];
+                }
+            }
+            $result->free();
+        }
+        $stmt->close();
     }
 }
 
@@ -159,7 +218,7 @@ if ($conn && $conn instanceof mysqli) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Menu | IKOMERS KOPI</title>
-    <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css?v=<?php echo filemtime(__DIR__ . '/../assets/css/dashboard.css'); ?>">
     <link rel="stylesheet" href="../assets/css/menu.css?v=<?php echo filemtime(__DIR__ . '/../assets/css/menu.css'); ?>">
 </head>
 <body>
@@ -236,7 +295,7 @@ if ($conn && $conn instanceof mysqli) {
             </ul>
         </nav>
         <div class="sidebar-footer">
-            <a class="logout-link" href="logout.php">Log out</a>
+            <a class="logout-link" href="logout.php">Sign Out</a>
             <span>Signed in as <strong><?php echo htmlspecialchars($username); ?></strong></span>
         </div>
     </aside>
@@ -268,12 +327,14 @@ if ($conn && $conn instanceof mysqli) {
                     <h2>Cafe Shop Menu Items</h2>
                 </div>
                 <div class="menu-page__filters">
-                    <input type="search" name="search" placeholder="Search item" aria-label="Search menu items">
-                    <select name="category" aria-label="Filter by category">
-                        <option value="all">All</option>
-                        <option value="espresso">Espresso</option>
-                        <option value="cold">Cold Brew</option>
-                        <option value="tea">Tea</option>
+                    <input type="search" id="menu-search-input" name="search" placeholder="Search item" aria-label="Search menu items" value="<?php echo htmlspecialchars($searchValue, ENT_QUOTES); ?>">
+                    <select id="menu-category-filter" name="category" aria-label="Filter by category">
+                        <option value="all" <?php echo strtolower($categoryFilter) === 'all' ? 'selected' : ''; ?>>All</option>
+                        <?php foreach ($categoryOptions as $categoryOption): ?>
+                            <option value="<?php echo htmlspecialchars($categoryOption, ENT_QUOTES); ?>" <?php echo $categoryFilter === $categoryOption ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($categoryOption); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
             </div>
@@ -291,13 +352,19 @@ if ($conn && $conn instanceof mysqli) {
                 <?php else: ?>
                     <?php foreach ($menuItems as $item): ?>
                         <?php $hasId = isset($item['id']) && (int) $item['id'] > 0; ?>
-                        <article class="menu-card">
+                        <article
+                            class="menu-card"
+                            data-name="<?php echo htmlspecialchars(strtolower($item['name']), ENT_QUOTES); ?>"
+                            data-description="<?php echo htmlspecialchars(strtolower($item['description'] ?? ''), ENT_QUOTES); ?>"
+                            data-category="<?php echo htmlspecialchars($item['category'] ?? 'Uncategorized', ENT_QUOTES); ?>"
+                        >
                             <div class="menu-card__image" style="background-image: url('<?php echo htmlspecialchars($item['image']); ?>');" role="img" aria-label="<?php echo htmlspecialchars($item['name']); ?>"></div>
                             <div class="menu-card__body">
                                 <div class="menu-card__meta">
                                     <h3><?php echo htmlspecialchars($item['name']); ?></h3>
-                                    <span class="price-chip">$<?php echo number_format($item['price'], 2); ?></span>
+                                    <span class="price-chip">₱<?php echo number_format($item['price'], 2); ?></span>
                                 </div>
+                                <p class="menu-card__category"><?php echo htmlspecialchars($item['category'] ?? 'Uncategorized'); ?></p>
                                 <div class="menu-card__footer">
                                     <p class="menu-card__description"><?php echo htmlspecialchars($item['description']); ?></p>
                                     <div class="menu-card__actions">
@@ -309,6 +376,7 @@ if ($conn && $conn instanceof mysqli) {
                                             data-name="<?php echo htmlspecialchars($item['name'], ENT_QUOTES); ?>"
                                             data-price="<?php echo htmlspecialchars(number_format((float)$item['price'], 2, '.', ''), ENT_QUOTES); ?>"
                                             data-description="<?php echo htmlspecialchars($item['description'] ?? '', ENT_QUOTES); ?>"
+                                            data-category="<?php echo htmlspecialchars($item['category'] ?? 'Uncategorized', ENT_QUOTES); ?>"
                                             data-image="<?php echo htmlspecialchars($item['image'] ?? '', ENT_QUOTES); ?>"
                                             <?php echo $hasId ? '' : 'disabled title="Demo item cannot be edited"'; ?>
                                         >
@@ -363,6 +431,16 @@ if ($conn && $conn instanceof mysqli) {
                         <label class="field">
                             <span>Price</span>
                             <input type="number" step="0.01" min="0.01" name="price" placeholder="Price" value="<?php echo htmlspecialchars($priceValue, ENT_QUOTES); ?>" required>
+                        </label>
+                        <label class="field">
+                            <span>Category</span>
+                            <select name="category" id="menu-category-input" required>
+                                <?php foreach ($categoryOptions as $categoryOption): ?>
+                                    <option value="<?php echo htmlspecialchars($categoryOption, ENT_QUOTES); ?>" <?php echo $categoryValue === $categoryOption ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($categoryOption); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                         </label>
                         <label class="field field--full">
                             <span>Description</span>
@@ -426,6 +504,7 @@ if ($conn && $conn instanceof mysqli) {
 <?php endif; ?>
 </body>
 </html>
+
 
 
 

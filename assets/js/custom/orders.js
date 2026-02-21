@@ -3,6 +3,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const orderModal = document.getElementById("orderModal");
   const closeOrderModal = document.getElementById("closeOrderModal");
   const cancelOrderModal = document.getElementById("cancelOrderModal");
+  const orderIdInput = document.getElementById("order-id");
+  const orderForm = document.querySelector("#orderModal form");
+  const orderModalTitle = document.querySelector("#orderModal h3");
+  const submitBtn = document.querySelector("#orderModal button[type='submit']");
 
   const selectCustomerModal = document.getElementById("selectCustomerModal");
   const openSelectCustomer = document.getElementById("openSelectCustomer");
@@ -53,6 +57,50 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const formatMoney = (value) => Number(value).toFixed(2);
 
+  const parseOrderItems = (itemsText) => {
+    const raw = String(itemsText || "").trim();
+    if (!raw) return [];
+
+    return raw
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .map((part) => {
+        const normalized = part.replace(/\s+/g, " ").trim();
+        const match = normalized.match(
+          /^(\d+)\s*x\s*(.+?)\s*\((?:₱|\$|â‚±)?\s*([\d.]+)\)$/i
+        );
+
+        if (!match) {
+          const fallbackName = normalized.replace(/^\d+\s*x\s*/i, "").trim();
+          return {
+            name: fallbackName || normalized,
+            qty: 1,
+            price: 0,
+            id: 0,
+          };
+        }
+
+        const qty = Math.max(1, Number.parseInt(match[1], 10) || 1);
+        const name = match[2].trim();
+        const price = Math.max(0, Number.parseFloat(match[3]) || 0);
+        const mapped = menuCatalogMap.get(name.toLowerCase());
+
+        return {
+          name,
+          qty,
+          price,
+          id: mapped ? Number(mapped.id || 0) : 0,
+        };
+      });
+  };
+
+  const clearOrderItemRows = () => {
+    if (!orderItemsTableBody) return;
+    orderItemsTableBody.innerHTML = "";
+    ensureEmptyStateRow();
+  };
+
   const ensureEmptyStateRow = () => {
     if (!orderItemsTableBody) return;
     const hasDataRows = orderItemsTableBody.querySelectorAll(".order-item-edit-row").length > 0;
@@ -73,6 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const rows = Array.from(orderItemsTableBody.querySelectorAll(".order-item-edit-row"));
     const tokens = [];
     let orderTotal = 0;
+    let hasPricedLine = false;
 
     rows.forEach((row) => {
       const itemInput = row.querySelector(".order-item-name-input");
@@ -85,15 +134,20 @@ document.addEventListener("DOMContentLoaded", () => {
       const price = Math.max(0, Number.parseFloat(priceInput?.value || "0") || 0);
       const lineTotal = qty * price;
       orderTotal += lineTotal;
+      if (lineTotal > 0) hasPricedLine = true;
 
       if (totalCell) totalCell.textContent = formatMoney(lineTotal);
       if (itemName) {
-        tokens.push(`${qty}x ${itemName} ($${formatMoney(price)})`);
+        tokens.push(`${qty}x ${itemName} (₱${formatMoney(price)})`);
       }
     });
 
-    if (orderTotalInput) orderTotalInput.value = formatMoney(orderTotal);
-    if (orderItemsHiddenInput) orderItemsHiddenInput.value = tokens.join(", ");
+    if (tokens.length > 0) {
+      if (orderTotalInput && hasPricedLine) orderTotalInput.value = formatMoney(orderTotal);
+      if (orderItemsHiddenInput) orderItemsHiddenInput.value = tokens.join(", ");
+    } else if (rows.length === 0 && orderItemsHiddenInput) {
+      orderItemsHiddenInput.value = "";
+    }
   };
 
   const applyMenuItemToRow = (row) => {
@@ -150,7 +204,16 @@ document.addEventListener("DOMContentLoaded", () => {
     buildItemsPayloadAndTotal();
   };
 
-  fab?.addEventListener("click", () => openDialog(orderModal));
+  fab?.addEventListener("click", () => {
+    orderForm.reset();
+    orderIdInput.value = "";
+    if (orderCustomerIdInput) orderCustomerIdInput.value = "";
+    clearOrderItemRows();
+    orderModalTitle.textContent = "Add New Order";
+    submitBtn.textContent = "Add Order";
+    orderModal.showModal();
+  });
+
   closeOrderModal?.addEventListener("click", () => closeDialog(orderModal));
   cancelOrderModal?.addEventListener("click", () => closeDialog(orderModal));
 
@@ -196,12 +259,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.querySelectorAll(".js-edit-order").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const orderId = Number.parseInt(btn.dataset.orderId || "0", 10);
-      const currentStatus = btn.dataset.status || "Pending";
-      activeStatusOrderId = orderId;
-      if (statusOrderLabel) statusOrderLabel.textContent = `Order: #${orderId || "-"}`;
-      if (statusSelect) statusSelect.value = currentStatus;
-      openDialog(statusModal);
+      clearOrderItemRows();
+
+      const itemsText = btn.dataset.items || "";
+      const parsedItems = parseOrderItems(itemsText);
+      if (parsedItems.length > 0) {
+        parsedItems.forEach((item) => addItemRow(item));
+      }
+
+      orderIdInput.value = btn.dataset.orderId || "";
+      document.getElementById("order-customer-name").value = btn.dataset.customer || "";
+      orderForm.querySelector("textarea[name='items']").value = itemsText;
+      orderForm.querySelector("input[name='total']").value = btn.dataset.total || "";
+      orderForm.querySelector("select[name='status']").value = btn.dataset.status || "Pending";
+
+      orderModalTitle.textContent = "Edit Order";
+      submitBtn.textContent = "Save Changes";
+      orderModal.showModal();
     });
   });
 
@@ -264,7 +338,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (viewOrderTitle) viewOrderTitle.textContent = `Order #${id}`;
       if (viewOrderDate) viewOrderDate.textContent = date;
-      if (viewOrderTotal) viewOrderTotal.textContent = `$${total}`;
+      if (viewOrderTotal) viewOrderTotal.textContent = `₱${total}`;
 
       if (viewOrderItems) {
         const itemRows = itemsRaw
@@ -276,17 +350,17 @@ document.addEventListener("DOMContentLoaded", () => {
           ? itemRows
               .map((item) => {
                 const normalized = item.replace(/\s+/g, " ").trim();
-                const match = normalized.match(/^(\d+)\s*x\s*(.+?)\s*\(\$?([\d.]+)\)$/i);
+                const match = normalized.match(/^(\d+)\s*x\s*(.+?)\s*\(([₱$])?([\d.]+)\)$/i);
 
                 const qty = match ? Number.parseInt(match[1], 10) : 1;
                 const name = match ? match[2] : normalized;
-                const price = match ? Number.parseFloat(match[3]) : Number.NaN;
+                const price = match ? Number.parseFloat(match[4]) : Number.NaN;
 
                 if (!Number.isNaN(price)) {
                   subtotal += qty * price;
                 }
 
-                const priceText = Number.isNaN(price) ? "-" : `$${price.toFixed(2)}`;
+                const priceText = Number.isNaN(price) ? "-" : `₱${price.toFixed(2)}`;
                 return `
                 <li class="order-item-row">
                   <div class="order-item-thumb" aria-hidden="true"><span>IMG</span></div>
@@ -300,7 +374,7 @@ document.addEventListener("DOMContentLoaded", () => {
           : '<li class="order-item-row"><div class="order-item-meta"><p class="order-item-name">No items listed.</p></div></li>';
 
         if (viewOrderSubtotal) {
-          viewOrderSubtotal.textContent = `$${(itemRows.length ? subtotal : Number.parseFloat(total) || 0).toFixed(2)}`;
+          viewOrderSubtotal.textContent = `₱${(itemRows.length ? subtotal : Number.parseFloat(total) || 0).toFixed(2)}`;
         }
       }
 
@@ -316,7 +390,13 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelector("#orderModal form")?.addEventListener("submit", () => {
     buildItemsPayloadAndTotal();
     if (orderItemsHiddenInput && !orderItemsHiddenInput.value.trim()) {
-      orderItemsHiddenInput.value = "1x Custom Order ($0.01)";
+      orderItemsHiddenInput.value = "1x Custom Order (₱0.01)";
+    }
+    if (orderTotalInput) {
+      const parsedTotal = Number.parseFloat(orderTotalInput.value || "0");
+      if (!Number.isFinite(parsedTotal) || parsedTotal <= 0) {
+        orderTotalInput.value = "0.01";
+      }
     }
   });
 

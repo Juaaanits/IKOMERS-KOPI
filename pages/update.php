@@ -5,13 +5,27 @@ require_once '../includes/db.php';
 
 $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
 $name = trim($_POST['name'] ?? '');
+$category = trim($_POST['category'] ?? 'Uncategorized');
 $price = trim($_POST['price'] ?? '');
 $description = trim($_POST['description'] ?? '');
+$allowedCategories = ['Espresso', 'Cold Brew', 'Tea', 'Non-Coffee', 'Pastry', 'Uncategorized'];
+if (!in_array($category, $allowedCategories, true)) {
+    $category = 'Uncategorized';
+}
 
 if ($id <= 0 || $name === '' || !is_numeric($price) || (float)$price <= 0) {
     http_response_code(400);
     echo json_encode(['ok' => false, 'message' => 'Invalid input']);
     exit;
+}
+
+$categoryColumnResult = $conn->query("SHOW COLUMNS FROM menu_items LIKE 'category'");
+$hasCategoryColumn = $categoryColumnResult && $categoryColumnResult->num_rows > 0;
+if ($categoryColumnResult) {
+    $categoryColumnResult->free();
+}
+if (!$hasCategoryColumn) {
+    $conn->query("ALTER TABLE menu_items ADD COLUMN category VARCHAR(50) NOT NULL DEFAULT 'Uncategorized' AFTER name");
 }
 
 $stmt = $conn->prepare('SELECT image_path FROM menu_items WHERE id = ? LIMIT 1');
@@ -98,8 +112,8 @@ if (isset($_FILES['image']) && is_array($_FILES['image'])) {
 }
 
 $priceVal = (float)$price;
-$upd = $conn->prepare('UPDATE menu_items SET name=?, price=?, description=?, image_path=? WHERE id=?');
-$upd->bind_param('sdssi', $name, $priceVal, $description, $newImagePath, $id);
+$upd = $conn->prepare('UPDATE menu_items SET name=?, category=?, price=?, description=?, image_path=? WHERE id=?');
+$upd->bind_param('ssdssi', $name, $category, $priceVal, $description, $newImagePath, $id);
 $ok = $upd->execute();
 $upd->close();
 
@@ -125,6 +139,7 @@ echo json_encode([
     'item' => [
         'id' => $id,
         'name' => $name,
+        'category' => $category,
         'price' => number_format($priceVal, 2, '.', ''),
         'description' => $description,
         'image' => $newImagePath

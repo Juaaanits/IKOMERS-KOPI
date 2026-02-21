@@ -12,11 +12,11 @@ $stats = [
     'customersPerDay' => 0.0
 ];
 $spendingDistribution = [
-    '$0-$20' => 0,
-    '$20-$50' => 0,
-    '$50-$100' => 0,
+    '₱0-₱20' => 0,
+    '₱20-₱50' => 0,
+    '₱50-₱100' => 0,
     'No Spending' => 0,
-    'Over $100' => 0
+    'Over ₱100' => 0
 ];
 $perPage = 3;
 $currentPage = isset($_GET['page']) ? (int) $_GET['page'] : 1;
@@ -122,13 +122,13 @@ if ($dbReady) {
             if ($ordersCount === 0) {
                 $spendingDistribution['No Spending'] += $bucketTotal;
             } elseif ($ordersCount <= 5) {
-                $spendingDistribution['$0-$20'] += $bucketTotal;
+                $spendingDistribution['₱0-₱20'] += $bucketTotal;
             } elseif ($ordersCount <= 12) {
-                $spendingDistribution['$20-$50'] += $bucketTotal;
+                $spendingDistribution['₱20-₱50'] += $bucketTotal;
             } elseif ($ordersCount <= 20) {
-                $spendingDistribution['$50-$100'] += $bucketTotal;
+                $spendingDistribution['₱50-₱100'] += $bucketTotal;
             } else {
-                $spendingDistribution['Over $100'] += $bucketTotal;
+                $spendingDistribution['Over ₱100'] += $bucketTotal;
             }
         }
         $spendingQuery->free();
@@ -140,19 +140,60 @@ if ($dbReady) {
     }
 
     $offset = ($currentPage - 1) * $perPage;
-    $stmt = $conn->prepare("SELECT id, name, email, phone, address, orders_count FROM customers ORDER BY id DESC LIMIT ? OFFSET ?");
-    if ($stmt) {
-        $stmt->bind_param('ii', $perPage, $offset);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        if ($result) {
-            while ($row = $result->fetch_assoc()) {
-                $customers[] = $row;
-            }
-            $result->free();
-        }
-        $stmt->close();
+
+    // check if orders table exists
+    $ordersTableExists = false;
+    $ordersTableCheck = $conn->query("SHOW TABLES LIKE 'orders'");
+    if ($ordersTableCheck) {
+        $ordersTableExists = $ordersTableCheck->num_rows > 0;
+        $ordersTableCheck->free();
     }
+
+    if ($ordersTableExists) {
+        // dynamic orders count per customer (matched by customer name)
+        $sql = "
+            SELECT
+                c.id,
+                c.name,
+                c.email,
+                c.phone,
+                c.address,
+                COALESCE(o.orders_count, 0) AS orders_count
+            FROM customers c
+            LEFT JOIN (
+                SELECT customer_name, COUNT(*) AS orders_count
+                FROM orders
+                GROUP BY customer_name
+            ) o ON o.customer_name = c.name
+            ORDER BY c.id DESC
+            LIMIT ? OFFSET ?
+        ";
+    } else {
+        // fallback if orders table not yet created
+        $sql = "
+            SELECT
+                id, name, email, phone, address,
+                0 AS orders_count
+            FROM customers
+            ORDER BY id DESC
+            LIMIT ? OFFSET ?
+        ";
+}
+
+$stmt = $conn->prepare($sql);
+if ($stmt) {
+    $stmt->bind_param('ii', $perPage, $offset);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $customers[] = $row;
+        }
+        $result->free();
+    }
+    $stmt->close();
+}
+
 }
 
 if ($conn && $conn instanceof mysqli) {
@@ -165,8 +206,8 @@ if ($conn && $conn instanceof mysqli) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Customers | IKOMERS KOPI</title>
-    <link rel="stylesheet" href="../assets/css/dashboard.css">
-    <link rel="stylesheet" href="../assets/css/customers.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css?v=<?php echo filemtime(__DIR__ . '/../assets/css/dashboard.css'); ?>">
+    <link rel="stylesheet" href="../assets/css/customers.css?v=<?php echo filemtime(__DIR__ . '/../assets/css/customers.css'); ?>">
 </head>
 <body>
 <div class="dashboard-layout">
@@ -242,7 +283,7 @@ if ($conn && $conn instanceof mysqli) {
             </ul>
         </nav>
         <div class="sidebar-footer">
-            <a class="logout-link" href="logout.php">Log out</a>
+            <a class="logout-link" href="logout.php">Sign Out</a>
             <span>Signed in as <strong><?php echo htmlspecialchars($username); ?></strong></span>
         </div>
     </aside>
@@ -406,7 +447,7 @@ if ($conn && $conn instanceof mysqli) {
                         <div class="dot dot--green"></div>
                         <div>
                             <p>Total Revenue Per Customer</p>
-                            <strong>$<?php echo number_format($stats['revenuePerCustomer'], 2); ?></strong>
+                            <strong>₱<?php echo number_format($stats['revenuePerCustomer'], 2); ?></strong>
                         </div>
                     </div>
                     <div class="metric">
@@ -477,13 +518,13 @@ if ($conn && $conn instanceof mysqli) {
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 window.customerSpendingData = {
-    labels: ['\$0-\$20', '\$20-\$50', '\$50-\$100', 'No Spending', 'Over \$100'],
+    labels: ['₱0-₱20', '₱20-₱50', '₱50-₱100', 'No Spending', 'Over ₱100'],
     counts: [
-        <?php echo (int) $spendingDistribution['$0-$20']; ?>,
-        <?php echo (int) $spendingDistribution['$20-$50']; ?>,
-        <?php echo (int) $spendingDistribution['$50-$100']; ?>,
+        <?php echo (int) $spendingDistribution['₱0-₱20']; ?>,
+        <?php echo (int) $spendingDistribution['₱20-₱50']; ?>,
+        <?php echo (int) $spendingDistribution['₱50-₱100']; ?>,
         <?php echo (int) $spendingDistribution['No Spending']; ?>,
-        <?php echo (int) $spendingDistribution['Over $100']; ?>
+        <?php echo (int) $spendingDistribution['Over ₱100']; ?>
     ],
     colors: ['#6b35d9', '#e23c7e', '#f0b22f', '#2b90e0', '#28a56b']
 };
@@ -494,3 +535,4 @@ window.customerSpendingData = {
 <script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 </html>
+

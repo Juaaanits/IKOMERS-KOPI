@@ -15,7 +15,7 @@
     --card-border: #f1e6d7;
     --focus-ring: rgba(255, 255, 255, 0.6);
     --main-bg: #fdfaf5;
-    --card-bg: #f9f2e8;
+    --card-bg: #ffffff;
     --shadow-soft: 0 8px 20px rgba(56, 37, 20, 0.12);
     --transition-speed: 160ms;
     --accent-gold: #c38e61;
@@ -65,6 +65,10 @@ a:focus {
     gap: 36px;
     box-shadow: 4px 0 20px rgba(0, 0, 0, 0.16);
     transition: width 220ms ease, padding 220ms ease;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
 }
 
 .brand {
@@ -176,9 +180,10 @@ a:focus {
 }
 
 .sidebar-footer {
-    display: none;
+    display: grid;
     gap: 12px;
     font-size: 0.95rem;
+    margin-top: auto;
 }
 
 @media (min-width: 1081px) {
@@ -222,7 +227,34 @@ a:focus {
     }
 
     .dashboard-layout.sidebar-collapsed .sidebar-footer {
+        display: grid;
+        justify-items: center;
+        gap: 8px;
+    }
+
+    .dashboard-layout.sidebar-collapsed .sidebar-footer > span {
         display: none;
+    }
+
+    .dashboard-layout.sidebar-collapsed .logout-link {
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border-radius: 12px;
+        justify-content: center;
+        font-size: 0;
+        line-height: 0;
+    }
+
+    .dashboard-layout.sidebar-collapsed .logout-link::before {
+        content: "";
+        width: 18px;
+        height: 18px;
+        display: inline-block;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M15 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21H15' stroke='white' stroke-width='1.8' stroke-linecap='round'/%3E%3Cpath d='M11 12H21' stroke='white' stroke-width='1.8' stroke-linecap='round'/%3E%3Cpath d='M18 9L21 12L18 15' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 18px 18px;
     }
 }
 
@@ -244,6 +276,7 @@ a:focus {
 
 .main-area {
     flex: 1;
+    min-width: 0;
     background-color: var(--main-bg);
     padding: 12px 16px 20px 12px;
     display: flex;
@@ -339,6 +372,10 @@ a:focus {
     cursor: pointer;
     font: inherit;
     color: inherit;
+}
+
+.account-trigger > span:not(.account-avatar) {
+    display: none !important;
 }
 
 .account-trigger:focus-visible {
@@ -522,6 +559,25 @@ a:focus {
     font-weight: 600;
 }
 
+.profile-edit-field select {
+    border: 0;
+    outline: none;
+    font-size: 1rem;
+    color: #2c3442;
+    background: transparent;
+    font-weight: 600;
+    padding: 0 30px 0 0;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9L12 15L18 9' stroke='%232c3442' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 12px 12px;
+    line-height: 1.2;
+    cursor: pointer;
+}
+
 .profile-edit-field input:disabled {
     color: #667386;
 }
@@ -684,7 +740,7 @@ a:focus {
 .cards {
     flex: 1; /* all cards take equal width */
     min-width: 220px; /* prevent them from shrinking too small */
-    background-color: var(--card-bg);
+    background-color: #ffffff !important;
     padding: 18px 22px;
     box-shadow: var(--shadow-soft);
     text-align: left;
@@ -724,12 +780,12 @@ a:focus {
 .graph-card {
     flex: 2 1 48%; /* twice as wide as normal card */
     min-width: 300px;
-    background-color: #fff;
+    background-color: #ffffff !important;
     border-radius: 12px;
     padding: 18px;
     box-shadow: var(--shadow-soft);
     border: 1px solid var(--card-border);
-    background: linear-gradient(180deg, #fffdf9 0%, #f7efdf 100%);
+    background: #ffffff !important;
     display: flex;
     flex-direction: column;
 }
@@ -920,7 +976,7 @@ a:focus {
 /* Recent Orders container */
 .recent-orders-container {
     margin-top: 24px;
-    background-color: #fff;
+    background-color: #ffffff !important;
     border-radius: 12px;
     padding: 24px;
     box-shadow: var(--shadow-soft);
@@ -995,6 +1051,9 @@ a:focus {
 
     .sidebar {
         width: 100%;
+        position: static;
+        height: auto;
+        overflow: visible;
         padding: 20px 16px;
         gap: 14px;
     }
@@ -1111,6 +1170,16 @@ a:focus {
     }
 
     .dashboard-layout:not(.sidebar-mobile-collapsed):not(.sidebar-collapsed) .sidebar-footer {
+        display: grid;
+        position: absolute;
+        left: 20px;
+        bottom: 24px;
+        width: auto;
+        gap: 10px;
+        z-index: 2;
+    }
+
+    .dashboard-layout:not(.sidebar-mobile-collapsed):not(.sidebar-collapsed) .sidebar-footer > span {
         display: none;
     }
 

@@ -19,6 +19,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const nameInput = form?.querySelector('input[name="name"]');
   const priceInput = form?.querySelector('input[name="price"]');
   const descInput = form?.querySelector('textarea[name="description"]');
+  const categoryInput = form?.querySelector('select[name="category"]');
+  const searchInput = document.getElementById("menu-search-input");
+  const categoryFilterInput = document.getElementById("menu-category-filter");
   const menuGrid = document.querySelector(".menu-grid");
   let pendingDeleteResolver = null;
 
@@ -60,6 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const resetToAddMode = () => {
     if (form) form.dataset.mode = "add";
     if (itemIdInput) itemIdInput.value = "";
+    if (categoryInput) categoryInput.value = "Uncategorized";
     if (modalTitle) modalTitle.textContent = "Add New Menu Item";
     if (submitBtn) {
       submitBtn.textContent = "Add Item";
@@ -128,6 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (nameInput) nameInput.value = editBtn.dataset.name || "";
       if (priceInput) priceInput.value = editBtn.dataset.price || "";
       if (descInput) descInput.value = editBtn.dataset.description || "";
+      if (categoryInput) categoryInput.value = editBtn.dataset.category || "Uncategorized";
       if (modalTitle) modalTitle.textContent = "Edit Menu Item";
       if (submitBtn) {
         submitBtn.textContent = "Save Changes";
@@ -240,5 +245,37 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  const applyMenuFilters = () => {
+    if (!menuGrid) return;
+
+    const searchTerm = (searchInput?.value || "").trim().toLowerCase();
+    const selectedCategory = (categoryFilterInput?.value || "all").trim().toLowerCase();
+    const cards = Array.from(menuGrid.querySelectorAll(".menu-card:not(.js-empty-menu-state)"));
+    let visibleCount = 0;
+
+    cards.forEach((card) => {
+      const name = (card.dataset.name || "").toLowerCase();
+      const description = (card.dataset.description || "").toLowerCase();
+      const category = (card.dataset.category || "").toLowerCase();
+
+      const matchesSearch =
+        searchTerm === "" || name.includes(searchTerm) || description.includes(searchTerm) || category.includes(searchTerm);
+      const matchesCategory = selectedCategory === "all" || category === selectedCategory;
+      const isVisible = matchesSearch && matchesCategory;
+
+      card.style.display = isVisible ? "" : "none";
+      if (isVisible) visibleCount += 1;
+    });
+
+    const emptyState = menuGrid.querySelector(".js-empty-menu-state");
+    if (emptyState) {
+      emptyState.style.display = visibleCount === 0 ? "" : "none";
+    }
+  };
+
+  searchInput?.addEventListener("input", applyMenuFilters);
+  categoryFilterInput?.addEventListener("change", applyMenuFilters);
+
   syncEmptyMenuState();
+  applyMenuFilters();
 });

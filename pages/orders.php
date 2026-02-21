@@ -229,8 +229,8 @@ if ($conn && $conn instanceof mysqli) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Orders | IKOMERS KOPI</title>
-    <link rel="stylesheet" href="../assets/css/dashboard.css">
-    <link rel="stylesheet" href="../assets/css/orders.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css?v=<?php echo filemtime(__DIR__ . '/../assets/css/dashboard.css'); ?>">
+    <link rel="stylesheet" href="../assets/css/orders.css?v=<?php echo filemtime(__DIR__ . '/../assets/css/orders.css'); ?>">
 </head>
 <body>
 <div class="dashboard-layout">
@@ -306,7 +306,7 @@ if ($conn && $conn instanceof mysqli) {
             </ul>
         </nav>
         <div class="sidebar-footer">
-            <a class="logout-link" href="logout.php">Log out</a>
+            <a class="logout-link" href="logout.php">Sign Out</a>
             <span>Signed in as <strong><?php echo htmlspecialchars($username); ?></strong></span>
         </div>
     </aside>
@@ -380,7 +380,7 @@ if ($conn && $conn instanceof mysqli) {
                                 <td><?php echo htmlspecialchars($order['id']); ?></td>
                                 <td><?php echo htmlspecialchars($order['customer']); ?></td>
                                 <td><?php echo htmlspecialchars($order['items']); ?></td>
-                                <td><?php echo number_format($order['total'], 2); ?></td>
+                                <td>₱<?php echo number_format($order['total'], 2); ?></td>
                                 <td><span class="status-pill status-pill--<?php echo $statusClass; ?>"><?php echo htmlspecialchars($order['status']); ?></span></td>
                                 <td><?php echo htmlspecialchars($order['date']); ?></td>
                                 <td class="actions-cell">
@@ -477,14 +477,14 @@ if ($conn && $conn instanceof mysqli) {
                         <div class="dot dot--green"></div>
                         <div>
                             <p>Total Revenue</p>
-                            <strong>$<?php echo number_format($metrics['totalRevenue'], 2); ?></strong>
+                            <strong>₱<?php echo number_format($metrics['totalRevenue'], 2); ?></strong>
                         </div>
                     </div>
                     <div class="metric">
                         <div class="dot dot--orange"></div>
                         <div>
                             <p>Avg Order Value</p>
-                            <strong>$<?php echo number_format($metrics['avgOrderValue'], 2); ?></strong>
+                            <strong>₱<?php echo number_format($metrics['avgOrderValue'], 2); ?></strong>
                         </div>
                     </div>
                 </div>
@@ -543,7 +543,7 @@ if ($conn && $conn instanceof mysqli) {
                                     <option value="<?php echo htmlspecialchars($menuItem['name']); ?>"></option>
                                 <?php endforeach; ?>
                             </datalist>
-                            <textarea class="order-items-hidden" name="items" rows="3" placeholder="Example: 2x Cappuccino ($4.75), 1x Latte ($4.50)" required></textarea>
+                            <textarea class="order-items-hidden" name="items" rows="3" placeholder="Example: 2x Cappuccino (₱4.75), 1x Latte (₱4.50)" required></textarea>
                         </div>
 
                         <label class="field field--half">
@@ -642,11 +642,11 @@ if ($conn && $conn instanceof mysqli) {
                     <div class="order-view-section">
                         <h4>Order Items</h4>
                         <ul id="viewOrderItems" class="order-view-items"></ul>
-                        <p class="order-view-subtotal">Subtotal <span id="viewOrderSubtotal">$0.00</span></p>
+                        <p class="order-view-subtotal">Subtotal <span id="viewOrderSubtotal">₱0.00</span></p>
                     </div>
 
                     <div class="order-view-footer">
-                        <div class="order-view-total">Total <strong id="viewOrderTotal">$0.00</strong></div>
+                        <div class="order-view-total">Total <strong id="viewOrderTotal">₱0.00</strong></div>
                         <button type="button" class="btn btn--print" id="printViewOrderBtn">Print Order</button>
                         <button type="button" class="btn btn--close-order" id="cancelViewOrderModal">Close</button>
                     </div>
@@ -675,3 +675,4 @@ window.ordersStatusData = {
 <script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 </html>
+

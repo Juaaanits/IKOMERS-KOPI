@@ -103,6 +103,19 @@
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.04);
 }
 
+.menu-page__filters select,
+#menu-category-input {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 38px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9L12 15L18 9' stroke='%232f3f52' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 12px 12px;
+    cursor: pointer;
+}
+
 .menu-grid {
     position: relative;
     display: grid;
@@ -180,6 +193,20 @@
     white-space: pre-line;
     overflow-wrap: anywhere;
     word-break: break-word;
+}
+
+.menu-card__category {
+    margin: -2px 0 2px;
+    display: inline-flex;
+    align-self: flex-start;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #f6eadb;
+    border: 1px solid var(--menu-border);
+    color: #7c5a3f;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
 }
 
 .menu-card__footer {
@@ -326,11 +353,14 @@
 }
 
 .field input,
-.field textarea {
+.field textarea,
+.field select {
     border: 1px solid #d6e2f3;
     border-radius: 10px;
     padding: 10px 12px;
     font-size: 0.98rem;
+    font-family: inherit;
+    font-weight: 500;
     outline: none;
     background: #fff;
     color: #1e2b3f;

@@ -13,6 +13,11 @@ if ($userId <= 0) {
 $name = trim($_POST['name'] ?? '');
 $email = trim($_POST['email'] ?? '');
 $phone = trim($_POST['phone'] ?? '');
+$role = trim($_POST['role'] ?? 'Admin');
+$allowedRoles = ['Admin', 'User'];
+if (!in_array($role, $allowedRoles, true)) {
+    $role = 'Admin';
+}
 
 if ($name === '' || strlen($name) > 120) {
     http_response_code(400);
@@ -42,7 +47,7 @@ $conn->query(
 
 $stmt = $conn->prepare(
     'UPDATE users
-     SET full_name = ?, email = ?, phone = ?
+     SET full_name = ?, email = ?, phone = ?, role = ?
      WHERE id = ?'
 );
 
@@ -52,7 +57,7 @@ if (!$stmt) {
     exit;
 }
 
-$stmt->bind_param('sssi', $name, $email, $phone, $userId);
+$stmt->bind_param('ssssi', $name, $email, $phone, $role, $userId);
 $ok = $stmt->execute();
 $stmt->close();
 
@@ -69,7 +74,6 @@ echo json_encode([
         'name' => $name,
         'email' => $email,
         'phone' => $phone,
-        'role' => 'Admin'
+        'role' => $role
     ]
 ]);
-

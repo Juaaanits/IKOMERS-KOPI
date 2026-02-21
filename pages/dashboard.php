@@ -115,12 +115,12 @@ if ($dbReady) {
 
             $tokens = array_filter(array_map('trim', explode(',', $rawItems)));
             foreach ($tokens as $token) {
-                if (preg_match('/^(\d+)\s*x\s*(.+?)\s*\(\$?[\d.]+\)$/i', $token, $match)) {
+                if (preg_match('/^(\d+)\s*x\s*(.+?)\s*\(([₱$])?[\d.]+\)$/iu', $token, $match)) {
                     $qty = max(1, (int) $match[1]);
                     $name = trim($match[2]);
                 } else {
                     $qty = 1;
-                    $name = trim(preg_replace('/\s*\(\$?[\d.]+\)\s*/', '', $token));
+                    $name = trim(preg_replace('/\s*\(([₱$])?[\d.]+\)\s*/u', '', $token));
                 }
 
                 if ($name === '') {
@@ -157,7 +157,7 @@ if (empty($popularLabels)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | IKOMERS KOPI</title>
-    <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css?v=<?php echo filemtime(__DIR__ . '/../assets/css/dashboard.css'); ?>">
 </head>
 
 <body>
@@ -234,7 +234,7 @@ if (empty($popularLabels)) {
             </ul>
         </nav>
         <div class="sidebar-footer">
-            <a class="logout-link" href="logout.php">Log out</a>
+            <a class="logout-link" href="logout.php">Sign Out</a>
             <span>Signed in as <strong><?php echo htmlspecialchars($username); ?></strong></span>
         </div>
     </aside>
@@ -264,7 +264,7 @@ if (empty($popularLabels)) {
             <div class="under-header">
                 <div class="cards">
                     <p>Total Sales</p>
-                    <h3>$<?php echo number_format($metrics['totalSales'], 2); ?></h3>
+                    <h3>₱<?php echo number_format($metrics['totalSales'], 2); ?></h3>
                 </div>
                 <div class="cards">
                     <p>Orders</p>
@@ -276,7 +276,7 @@ if (empty($popularLabels)) {
                 </div>
                 <div class="cards">
                     <p>Avg. Order Value</p>
-                    <h3>$<?php echo number_format($metrics['avgOrderValue'], 2); ?></h3>
+                    <h3>₱<?php echo number_format($metrics['avgOrderValue'], 2); ?></h3>
                 </div>
             </div>
 
@@ -330,7 +330,7 @@ if (empty($popularLabels)) {
                                     <td>#<?php echo (int) $order['id']; ?></td>
                                     <td><?php echo htmlspecialchars($order['customer']); ?></td>
                                     <td><?php echo htmlspecialchars($order['items']); ?></td>
-                                    <td>$<?php echo number_format((float) $order['total'], 2); ?></td>
+                                    <td>₱<?php echo number_format((float) $order['total'], 2); ?></td>
                                     <td><span class="status-pill status-pill--<?php echo $statusClass; ?>"><?php echo htmlspecialchars($order['status']); ?></span></td>
                                 </tr>
                             <?php endforeach; ?>
@@ -452,3 +452,4 @@ window.dashboardData = {
 <script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 </html>
+

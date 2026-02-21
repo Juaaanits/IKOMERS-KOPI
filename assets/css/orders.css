@@ -173,9 +173,10 @@
 .orders-insights {
     display: grid;
     grid-template-columns: minmax(320px, 1.2fr) 0.8fr;
+    grid-auto-rows: 1fr;
     gap: 18px;
     margin-top: 10px;
-    align-items: start;
+    align-items: stretch;
 }
 
 .insight-card {
@@ -184,6 +185,7 @@
     border-radius: 12px;
     padding: 14px;
     box-shadow: var(--orders-shadow);
+    height: 100%;
 }
 
 .insight-card h3 {
@@ -194,9 +196,9 @@
 
 .chart-wrapper {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(220px, 1fr) minmax(240px, 320px);
     grid-template-areas: "legend chart";
-    gap: 12px;
+    gap: 16px;
     align-items: center;
 }
 
@@ -205,23 +207,31 @@
     position: relative;
     display: grid;
     place-items: center;
+    width: min(100%, 260px);
+    aspect-ratio: 1 / 1;
+    min-height: 0;
+    padding: 0;
+    margin-inline: auto;
 }
 
 .chart-wrapper canvas {
-    max-height: 220px;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: none;
+    display: block;
 }
 
 .chart-legend {
     grid-area: legend;
     display: grid;
-    gap: 8px;
+    gap: 10px;
     padding-left: 6px;
 }
 
 .chart-legend .legend-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(120px, auto) auto;
     align-items: center;
-    justify-content: space-between;
     gap: 10px;
     font-weight: 700;
     color: var(--orders-head);
@@ -238,6 +248,8 @@
 .chart-legend .legend-value {
     color: var(--orders-head);
     font-weight: 700;
+    text-align: right;
+    min-width: 64px;
 }
 
 .chart-legend .legend-dot {
@@ -267,25 +279,35 @@
 }
 
 .insight-metrics {
-    display: grid;
-    gap: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 15px;
+    height: 100%;
 }
 
 .metric {
     display: flex;
     gap: 10px;
-    align-items: center;
+    align-items: flex-start !important;
     background: #fffdfa;
     border: 1px solid var(--orders-border);
     border-radius: 10px;
     padding: 12px;
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 .metric p {
     margin: 0;
     color: var(--orders-sub);
     font-weight: 600;
+}
+
+.metric > div:last-child {
+    display: grid;
+    gap: 4px;
 }
 
 .metric strong {
@@ -297,6 +319,9 @@
     width: 14px;
     height: 14px;
     border-radius: 50%;
+    margin-top: 3px !important;
+    align-self: flex-start;
+    flex-shrink: 0;
 }
 
 .dot--blue { background: #4532d3; }

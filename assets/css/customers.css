@@ -336,7 +336,7 @@
 .metric {
     display: flex;
     gap: 10px;
-    align-items: center;
+    align-items: flex-start !important;
     background: #fffdfa;
     border: 1px solid var(--cust-border);
     border-radius: 10px;
@@ -352,6 +352,11 @@
     font-weight: 600;
 }
 
+.metric > div:last-child {
+    display: grid;
+    gap: 4px;
+}
+
 .metric strong {
     color: var(--cust-head);
     font-size: 1.1rem;
@@ -361,6 +366,9 @@
     width: 14px;
     height: 14px;
     border-radius: 50%;
+    margin-top: 3px !important;
+    align-self: flex-start;
+    flex-shrink: 0;
 }
 
 .dot--blue { background: #4532d3; }

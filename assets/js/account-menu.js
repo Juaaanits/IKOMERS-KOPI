@@ -88,7 +88,10 @@ document.addEventListener("DOMContentLoaded", () => {
         </label>
         <label class="profile-edit-field">
           <span>Role</span>
-          <input type="text" id="profile-edit-role-value" disabled>
+          <select name="role" id="profile-edit-role-value">
+            <option value="Admin">Admin</option>
+            <option value="User">User</option>
+          </select>
         </label>
         <div class="profile-modal__actions">
           <button type="button" class="profile-btn profile-btn--ghost" data-close-edit="1">Close</button>
@@ -101,6 +104,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const profileNameEl = profileModal.querySelector("#profile-modal-title");
   const profileAvatarEl = profileModal.querySelector("#profile-avatar-label");
+  const triggerAvatarEl = trigger.querySelector(".account-avatar");
   const profileRoleEl = profileModal.querySelector("#profile-role");
   const profileRoleValueEl = profileModal.querySelector("#profile-role-value");
   const profileEmailEl = profileModal.querySelector("#profile-email");
@@ -134,10 +138,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (editEmailInput) editEmailInput.value = profileState.email || "";
     if (editPhoneInput) editPhoneInput.value = profileState.phone || "";
 
-    const greetingEl = trigger.querySelector("span");
-    if (greetingEl) greetingEl.textContent = `Hello, ${profileState.name || "Admin"}`;
+    if (triggerAvatarEl) triggerAvatarEl.textContent = avatar;
+    const greetingEl = trigger.querySelector("span:not(.account-avatar)");
+    if (greetingEl) {
+      greetingEl.textContent = "";
+      greetingEl.style.display = "none";
+    }
     const headStrong = dropdown.querySelector(".account-dropdown__head strong");
-    if (headStrong) headStrong.textContent = profileState.name || "Admin";
+    if (headStrong) {
+      const safeName = (profileState.name || "Admin").trim() || "Admin";
+      headStrong.textContent = `Hi, ${safeName}!`;
+    }
   };
 
   const loadProfile = async () => {

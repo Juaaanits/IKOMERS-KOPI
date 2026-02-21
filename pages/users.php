@@ -67,7 +67,7 @@ if ($conn && $conn instanceof mysqli) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Users | IKOMERS KOPI</title>
-    <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css?v=<?php echo filemtime(__DIR__ . '/../assets/css/dashboard.css'); ?>">
     <link rel="stylesheet" href="../assets/css/users.css?v=<?php echo filemtime(__DIR__ . '/../assets/css/users.css'); ?>">
 </head>
 <body>
@@ -140,7 +140,7 @@ if ($conn && $conn instanceof mysqli) {
             </ul>
         </nav>
         <div class="sidebar-footer">
-            <a class="logout-link" href="logout.php">Log out</a>
+            <a class="logout-link" href="logout.php">Sign Out</a>
             <span>Signed in as <strong><?php echo htmlspecialchars($username); ?></strong></span>
         </div>
     </aside>
@@ -280,4 +280,5 @@ if ($conn && $conn instanceof mysqli) {
 <script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 </html>
+
 

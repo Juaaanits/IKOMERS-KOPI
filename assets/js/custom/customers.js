@@ -130,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const spendingCtx = document.getElementById("spendingChart");
   const legend = document.getElementById("spendingLegend");
   const spendingData = window.customerSpendingData || {
-    labels: ["$0-$20", "$20-$50", "$50-$100", "No Spending", "Over $100"],
+    labels: ["₱0-₱20", "₱20-₱50", "₱50-₱100", "No Spending", "Over ₱100"],
     counts: [0, 0, 0, 0, 0],
     colors: ["#6b35d9", "#e23c7e", "#f0b22f", "#2b90e0", "#28a56b"],
   };
