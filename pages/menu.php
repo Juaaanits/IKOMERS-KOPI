@@ -14,6 +14,25 @@ $categoryValue = 'Uncategorized';
 $searchValue = trim($_GET['search'] ?? '');
 $categoryFilter = trim($_GET['category'] ?? 'all');
 $categoryOptions = ['Espresso', 'Cold Brew', 'Tea', 'Non-Coffee', 'Pastry', 'Uncategorized'];
+$defaultMenuImage = '../assets/images/coffee.png';
+
+$resolveMenuImage = static function (?string $imagePath) use ($defaultMenuImage): string {
+    $candidate = trim((string) $imagePath);
+    if ($candidate === '') {
+        return $defaultMenuImage;
+    }
+
+    if (preg_match('#^(https?:)?//#i', $candidate) || strpos($candidate, 'data:') === 0) {
+        return $candidate;
+    }
+
+    $absolutePath = __DIR__ . '/' . ltrim($candidate, '/');
+    if (is_file($absolutePath)) {
+        return $candidate;
+    }
+
+    return $defaultMenuImage;
+};
 
 $dbReady = $conn && $conn instanceof mysqli && $conn->connect_errno === 0;
 
@@ -352,13 +371,14 @@ if ($conn && $conn instanceof mysqli) {
                 <?php else: ?>
                     <?php foreach ($menuItems as $item): ?>
                         <?php $hasId = isset($item['id']) && (int) $item['id'] > 0; ?>
+                        <?php $cardImage = $resolveMenuImage((string) ($item['image'] ?? '')); ?>
                         <article
                             class="menu-card"
                             data-name="<?php echo htmlspecialchars(strtolower($item['name']), ENT_QUOTES); ?>"
                             data-description="<?php echo htmlspecialchars(strtolower($item['description'] ?? ''), ENT_QUOTES); ?>"
                             data-category="<?php echo htmlspecialchars($item['category'] ?? 'Uncategorized', ENT_QUOTES); ?>"
                         >
-                            <div class="menu-card__image" style="background-image: url('<?php echo htmlspecialchars($item['image']); ?>');" role="img" aria-label="<?php echo htmlspecialchars($item['name']); ?>"></div>
+                            <div class="menu-card__image" style="background-image: url('<?php echo htmlspecialchars($cardImage); ?>');" role="img" aria-label="<?php echo htmlspecialchars($item['name']); ?>"></div>
                             <div class="menu-card__body">
                                 <div class="menu-card__meta">
                                     <h3><?php echo htmlspecialchars($item['name']); ?></h3>
@@ -377,7 +397,7 @@ if ($conn && $conn instanceof mysqli) {
                                             data-price="<?php echo htmlspecialchars(number_format((float)$item['price'], 2, '.', ''), ENT_QUOTES); ?>"
                                             data-description="<?php echo htmlspecialchars($item['description'] ?? '', ENT_QUOTES); ?>"
                                             data-category="<?php echo htmlspecialchars($item['category'] ?? 'Uncategorized', ENT_QUOTES); ?>"
-                                            data-image="<?php echo htmlspecialchars($item['image'] ?? '', ENT_QUOTES); ?>"
+                                            data-image="<?php echo htmlspecialchars($cardImage, ENT_QUOTES); ?>"
                                             <?php echo $hasId ? '' : 'disabled title="Demo item cannot be edited"'; ?>
                                         >
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -450,6 +470,7 @@ if ($conn && $conn instanceof mysqli) {
                             <span>Image</span>
                             <div class="dropzone" id="dropzone">
                                 <input type="file" name="image" id="image-input" accept=".jpg,.jpeg,.png,.webp,.gif,image/*" required>
+                                <img id="menu-image-preview" class="dropzone__preview" alt="Selected image preview" hidden>
                                 <p>Drag and drop an image here</p>
                                 <a href="#" id="browse-files" aria-label="Browse files">Browse Files</a>
                                 <p id="selected-image-name" class="dropzone__filename">No image selected yet</p>
@@ -504,8 +525,6 @@ if ($conn && $conn instanceof mysqli) {
 <?php endif; ?>
 </body>
 </html>
-
-
 
 
 

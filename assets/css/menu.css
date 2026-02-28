@@ -570,3 +570,13 @@
 #menu-fab:hover {
     box-shadow: 0 18px 38px rgba(183, 106, 43, 0.4) !important;
 }
+
+.dropzone__preview {
+    width: min(100%, 280px);
+    max-height: 180px;
+    object-fit: contain;
+    border-radius: 10px;
+    border: 1px solid #d6e2f3;
+    margin: 0 auto 8px;
+    display: block;
+}

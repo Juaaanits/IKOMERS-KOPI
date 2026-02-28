@@ -5,7 +5,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const cancelBtn = document.getElementById("cancel-menu-item");
   const browseLink = document.getElementById("browse-files");
   const dropzone = document.getElementById("dropzone");
-  const fileInput = document.getElementById("image-input");
   const form = document.getElementById("menu-form");
   const fileNameLabel = document.getElementById("selected-image-name");
   const modalTitle = document.getElementById("menu-modal-title");
@@ -23,7 +22,76 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("menu-search-input");
   const categoryFilterInput = document.getElementById("menu-category-filter");
   const menuGrid = document.querySelector(".menu-grid");
+  const preview = document.getElementById("menu-image-preview");
+  const fileInput = document.getElementById("image-input");
+  let previewUrl = "";
   let pendingDeleteResolver = null;
+
+  const showPreview = (file) => {
+  if (!preview) return;
+
+  if (previewUrl) {
+    URL.revokeObjectURL(previewUrl);
+    previewUrl = "";
+  }
+
+  if (!file || !file.type.startsWith("image/")) {
+    preview.hidden = true;
+    preview.removeAttribute("src");
+    return;
+    }
+
+    previewUrl = URL.createObjectURL(file);
+    preview.src = previewUrl;
+    preview.hidden = false;
+  };
+
+  const renderPreview = (file) => {
+    if (!preview) return;
+
+    // Revoke old object URL before creating a new one.
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      previewUrl = "";
+    }
+
+    // No file or non-image file: hide preview.
+    if (!file || !file.type.startsWith("image/")) {
+      preview.hidden = true;
+      preview.removeAttribute("src");
+      return;
+    }
+
+    // Create temporary browser URL for local file and show it.
+    previewUrl = URL.createObjectURL(file);
+    preview.src = previewUrl;
+    preview.hidden = false;
+  };
+
+  /**
+   * When user picks a file using Browse Files,
+   * render that file immediately in the preview.
+   */
+  fileInput?.addEventListener("change", (event) => {
+    const file = event.target?.files?.[0];
+    renderPreview(file);
+  });
+
+  /**
+   * Optional: if you support drag-and-drop,
+   * call the same preview function in drop handler.
+   */
+  dropzone?.addEventListener("drop", (event) => {
+    const files = event.dataTransfer?.files;
+    if (!files || !files.length) return;
+
+    // Keep input in sync with dropped files.
+    fileInput.files = files;
+
+    // Preview the first dropped image.
+    renderPreview(files[0]);
+  });
+
 
   const syncEmptyMenuState = () => {
     if (!menuGrid) return;
@@ -71,6 +139,14 @@ document.addEventListener("DOMContentLoaded", () => {
       submitBtn.setAttribute("value", "1");
     }
     if (fileInput) fileInput.required = true;
+    if (preview) {
+      preview.hidden = true;
+      preview.removeAttribute("src");
+    }
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      previewUrl = "";
+    }
   };
 
   const openModal = () => modal?.showModal();
@@ -211,6 +287,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fileNameLabel.textContent = files && files.length
       ? `Selected: ${files[0].name}`
       : "No image selected yet";
+    showPreview(files && files.length ? files[0] : null);
   };
 
   fileInput?.addEventListener("change", (event) => {

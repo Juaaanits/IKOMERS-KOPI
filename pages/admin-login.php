@@ -4,30 +4,6 @@ require_once '../includes/db.php';
 
 $loginResult = '';
 $usernameValue = '';
-$defaultAdminUsername = 'admin';
-$defaultAdminPassword = 'Admin@12345';
-
-if ($conn && $conn instanceof mysqli && $conn->connect_errno === 0) {
-    // Ensure a default admin account exists for first-time setup.
-    $checkAdmin = $conn->prepare('SELECT id FROM users WHERE username = ? LIMIT 1');
-    if ($checkAdmin) {
-        $checkAdmin->bind_param('s', $defaultAdminUsername);
-        $checkAdmin->execute();
-        $checkAdmin->store_result();
-        $adminExists = $checkAdmin->num_rows > 0;
-        $checkAdmin->close();
-
-        if (!$adminExists) {
-            $seedPassword = password_hash($defaultAdminPassword, PASSWORD_DEFAULT);
-            $insertAdmin = $conn->prepare('INSERT INTO users (username, password) VALUES (?, ?)');
-            if ($insertAdmin) {
-                $insertAdmin->bind_param('ss', $defaultAdminUsername, $seedPassword);
-                $insertAdmin->execute();
-                $insertAdmin->close();
-            }
-        }
-    }
-}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login-btn'])) {
     $usernameValue = trim($_POST['username'] ?? '');
