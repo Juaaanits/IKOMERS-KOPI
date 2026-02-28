@@ -6,11 +6,11 @@ $loginResult = '';
 $usernameValue = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login-btn'])) {
-    $usernameValue = trim($_POST['username'] ?? '');
+    $usernameValue = trim($_POST['login'] ?? '');
     $password = trim($_POST['password'] ?? '');
 
     if ($usernameValue === '' || $password === '') {
-        $loginResult = 'Enter both username and password to continue.';
+        $loginResult = 'Enter both login and password to continue.';
     } else {
         $authenticated = false;
         $userId = null;
