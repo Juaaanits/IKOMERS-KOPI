@@ -4,15 +4,11 @@ require_once '../includes/require_admin_api.php';
 require_once '../includes/db.php';
 
 $conn->query(
-    "CREATE TABLE IF NOT EXISTS system_users (
-        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        fullname VARCHAR(120) NOT NULL,
-        email VARCHAR(190) NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        phone VARCHAR(40) DEFAULT '',
-        role ENUM('Admin','User') NOT NULL DEFAULT 'User',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )"
+    "ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS full_name VARCHAR(120) NULL AFTER username,
+        ADD COLUMN IF NOT EXISTS email VARCHAR(190) NULL AFTER full_name,
+        ADD COLUMN IF NOT EXISTS phone VARCHAR(40) NULL AFTER email,
+        ADD COLUMN IF NOT EXISTS role VARCHAR(30) NOT NULL DEFAULT 'User' AFTER phone"
 );
 
 $id = isset($_POST['id']) ? (int) $_POST['id'] : 0;
@@ -23,20 +19,32 @@ $phone = trim($_POST['phone'] ?? '');
 $role = trim($_POST['role'] ?? '');
 $allowedRoles = ['Admin', 'User'];
 
-if ($id <= 0 || $fullname === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || $password === '' || !in_array($role, $allowedRoles, true)) {
+if ($id <= 0 || $fullname === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || !in_array($role, $allowedRoles, true)) {
     http_response_code(400);
     echo json_encode(['ok' => false, 'message' => 'Invalid input']);
     exit;
 }
 
-$stmt = $conn->prepare('UPDATE system_users SET fullname = ?, email = ?, password = ?, phone = ?, role = ? WHERE id = ?');
-if (!$stmt) {
-    http_response_code(500);
-    echo json_encode(['ok' => false, 'message' => 'Failed to prepare update query']);
-    exit;
+$emailLower = strtolower($email);
+if ($password !== '') {
+    $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+    $stmt = $conn->prepare('UPDATE users SET username = ?, full_name = ?, email = ?, password = ?, phone = ?, role = ? WHERE id = ?');
+    if (!$stmt) {
+        http_response_code(500);
+        echo json_encode(['ok' => false, 'message' => 'Failed to prepare update query']);
+        exit;
+    }
+    $stmt->bind_param('ssssssi', $emailLower, $fullname, $emailLower, $passwordHash, $phone, $role, $id);
+} else {
+    $stmt = $conn->prepare('UPDATE users SET username = ?, full_name = ?, email = ?, phone = ?, role = ? WHERE id = ?');
+    if (!$stmt) {
+        http_response_code(500);
+        echo json_encode(['ok' => false, 'message' => 'Failed to prepare update query']);
+        exit;
+    }
+    $stmt->bind_param('sssssi', $emailLower, $fullname, $emailLower, $phone, $role, $id);
 }
 
-$stmt->bind_param('sssssi', $fullname, $email, $password, $phone, $role, $id);
 $ok = $stmt->execute();
 $stmt->close();
 

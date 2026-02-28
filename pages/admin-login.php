@@ -6,58 +6,99 @@ $loginResult = '';
 $usernameValue = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login-btn'])) {
+
+    // Sanitize input
     $usernameValue = trim($_POST['login'] ?? '');
     $password = trim($_POST['password'] ?? '');
 
+    // Check empty input
     if ($usernameValue === '' || $password === '') {
         $loginResult = 'Enter both login and password to continue.';
     } else {
+        // Initialize
         $authenticated = false;
         $userId = null;
-        $username = null;
+        $username = '';
 
+        // Check database connection
         if ($conn && $conn instanceof mysqli && $conn->connect_errno === 0) {
-            $stmt = $conn->prepare('SELECT id, username, password FROM users WHERE username = ? LIMIT 1');
+            $conn->query(
+                "ALTER TABLE users
+                    ADD COLUMN IF NOT EXISTS full_name VARCHAR(120) NULL AFTER username,
+                    ADD COLUMN IF NOT EXISTS email VARCHAR(190) NULL AFTER full_name,
+                    ADD COLUMN IF NOT EXISTS phone VARCHAR(40) NULL AFTER email,
+                    ADD COLUMN IF NOT EXISTS role VARCHAR(30) NOT NULL DEFAULT 'User' AFTER phone"
+            );
+
+            // Prepare query to allow login via username or email
+            $stmt = $conn->prepare('
+                SELECT id, username, full_name, email, password, role
+                FROM users
+                WHERE username = ? OR email = ?
+                LIMIT 1
+            ');
+
             if ($stmt) {
-                $stmt->bind_param('s', $usernameValue);
+                // Bind login value for both placeholders
+                $stmt->bind_param('ss', $usernameValue, $usernameValue);
                 $stmt->execute();
-                $stmt->store_result();
 
-                if ($stmt->num_rows === 1) {
-                    $stmt->bind_result($userId, $dbUsername, $dbPassword);
-                    $stmt->fetch();
+                // Fetch user
+                $result = $stmt->get_result();
+                $user = $result ? $result->fetch_assoc() : null;
+                $stmt->close();
 
-                    if (
-                        strcasecmp($dbUsername, $defaultAdminUsername) === 0
-                        && (password_verify($password, $dbPassword) || $password === $dbPassword)
-                    ) {
-                        $authenticated = true;
-                        $username = $dbUsername;
-                    } else {
-                        $loginResult = 'Only administrator access is allowed.';
+                // Check if user exists and password matches
+                $passwordHash = (string) ($user['password'] ?? '');
+                $passwordOk = $user ? password_verify($password, $passwordHash) : false;
+
+                // Backward compatibility for legacy plain-text rows.
+                if (!$passwordOk && $user && !str_starts_with($passwordHash, '$2y$') && hash_equals($passwordHash, $password)) {
+                    $passwordOk = true;
+                    $rehash = password_hash($password, PASSWORD_DEFAULT);
+                    $rehashStmt = $conn->prepare('UPDATE users SET password = ? WHERE id = ?');
+                    if ($rehashStmt) {
+                        $uid = (int) $user['id'];
+                        $rehashStmt->bind_param('si', $rehash, $uid);
+                        $rehashStmt->execute();
+                        $rehashStmt->close();
                     }
-                } else {
-                    $loginResult = 'Administrator account not found.';
                 }
 
-                $stmt->close();
+                if ($user && $passwordOk) {
+
+                    // Restrict to Admin role
+                    $userRole = trim((string)($user['role'] ?? 'User'));
+                    if (strcasecmp($userRole, 'Admin') !== 0) {
+                        $loginResult = 'Only administrator access is allowed.';
+                    } else {
+                        // Admin authenticated
+                        $authenticated = true;
+                        $userId = (int)$user['id'];
+                        $username = trim((string) ($user['full_name'] ?? '')) !== ''
+                            ? (string) $user['full_name']
+                            : (string) $user['username'];
+
+                        // Set session securely
+                        session_regenerate_id(true);
+                        $_SESSION['user_id'] = $userId;
+                        $_SESSION['username'] = $username;
+                        $_SESSION['is_admin'] = true;
+
+                        header('Location: dashboard.php');
+                        exit();
+                    }
+
+                } else {
+                    $loginResult = 'Invalid login credentials.';
+                }
+
             } else {
                 $loginResult = 'Unable to run login query.';
             }
+
         } else {
             $loginResult = 'Database connection failure.';
-        }
-
-        if ($authenticated) {
-            session_regenerate_id(true);
-            $_SESSION['user_id'] = $userId;
-            $_SESSION['username'] = $username;
-            $_SESSION['is_admin'] = true;
-
-            header('Location: dashboard.php');
-            exit();
-        } else {
-            $loginResult = $loginResult ?: 'The credentials you entered did not match our records.';
         }
     }
 }
@@ -88,8 +129,8 @@ if ($conn && $conn instanceof mysqli) {
             <form method="post" autocomplete="on">
                 <div class="input-details">
                     <label for="username" class="visually-hidden">Administrator Username</label>
-                    <input type="text" id="username" name="username" placeholder="Admin username"
-                           value="<?php echo htmlspecialchars($usernameValue, ENT_QUOTES); ?>" required>
+                    <input type="text" id="login" name="login" placeholder="Username or email"
+                           value="<?php echo htmlspecialchars($usernameValue ?? '', ENT_QUOTES); ?>" required>
                 </div>
                 <div class="input-details">
                     <label for="password" class="visually-hidden">Administrator Password</label>

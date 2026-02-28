@@ -8,16 +8,17 @@ $users = [];
 
 $dbReady = $conn && $conn instanceof mysqli && $conn->connect_errno === 0;
 if ($dbReady) {
+    // Ensure users table has all fields used by admin user management.
     $conn->query(
-        "CREATE TABLE IF NOT EXISTS system_users (
-            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            fullname VARCHAR(120) NOT NULL,
-            email VARCHAR(190) NOT NULL,
-            password VARCHAR(255) NOT NULL,
-            phone VARCHAR(40) DEFAULT '',
-            role ENUM('Admin','User') NOT NULL DEFAULT 'User',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )"
+        "ALTER TABLE users
+            ADD COLUMN IF NOT EXISTS full_name VARCHAR(120) NULL AFTER username,
+            ADD COLUMN IF NOT EXISTS email VARCHAR(190) NULL AFTER full_name,
+            ADD COLUMN IF NOT EXISTS phone VARCHAR(40) NULL AFTER email,
+            ADD COLUMN IF NOT EXISTS role VARCHAR(30) NOT NULL DEFAULT 'User' AFTER phone"
+    );
+
+    $conn->query(
+        "CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique ON users (email)"
     );
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_user'])) {
@@ -29,9 +30,12 @@ if ($dbReady) {
         $allowedRoles = ['Admin', 'User'];
 
         if ($fullname !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) && $password !== '' && in_array($role, $allowedRoles, true)) {
-            $insert = $conn->prepare("INSERT INTO system_users (fullname, email, password, phone, role) VALUES (?, ?, ?, ?, ?)");
+            $emailLower = strtolower($email);
+            $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+            $insert = $conn->prepare("INSERT INTO users (username, full_name, email, password, phone, role) VALUES (?, ?, ?, ?, ?, ?)");
             if ($insert) {
-                $insert->bind_param('sssss', $fullname, $email, $password, $phone, $role);
+                // Use email as username so login can work with either username or email.
+                $insert->bind_param('ssssss', $emailLower, $fullname, $emailLower, $passwordHash, $phone, $role);
                 $insert->execute();
                 $insert->close();
             }
@@ -41,13 +45,13 @@ if ($dbReady) {
         exit;
     }
 
-    $usersResult = $conn->query("SELECT id, fullname, email, password, phone, role FROM system_users ORDER BY id ASC");
+    $usersResult = $conn->query("SELECT id, username, full_name, email, password, phone, role FROM users ORDER BY id ASC");
     if ($usersResult) {
         while ($row = $usersResult->fetch_assoc()) {
             $users[] = [
                 'id' => (int) $row['id'],
-                'name' => $row['fullname'],
-                'email' => $row['email'],
+                'name' => $row['full_name'] ?: $row['username'],
+                'email' => $row['email'] ?: $row['username'],
                 'password' => $row['password'],
                 'phone' => $row['phone'],
                 'role' => $row['role']
@@ -197,18 +201,12 @@ if ($conn && $conn instanceof mysqli) {
                             <td><?php echo htmlspecialchars($user['name']); ?></td>
                             <td><?php echo htmlspecialchars($user['email']); ?></td>
                             <td>
-                                <span class="password-mask" data-password="<?php echo htmlspecialchars($user['password'], ENT_QUOTES); ?>">********</span>
-                                <button type="button" class="icon-btn icon-btn--view js-toggle-user-password" aria-label="View password">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M3 12C3 12 6.5 6 12 6C17.5 6 21 12 21 12C21 12 17.5 18 12 18C6.5 18 3 12 3 12Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/>
-                                    </svg>
-                                </button>
+                                <span class="password-mask">********</span>
                             </td>
                             <td><?php echo htmlspecialchars($user['phone']); ?></td>
                             <td><?php echo htmlspecialchars($user['role']); ?></td>
                             <td class="actions-cell">
-                                <button type="button" class="icon-btn icon-btn--edit js-edit-user" aria-label="Edit user" data-id="<?php echo (int) $user['id']; ?>" data-name="<?php echo htmlspecialchars($user['name'], ENT_QUOTES); ?>" data-email="<?php echo htmlspecialchars($user['email'], ENT_QUOTES); ?>" data-password="<?php echo htmlspecialchars($user['password'], ENT_QUOTES); ?>" data-phone="<?php echo htmlspecialchars($user['phone'], ENT_QUOTES); ?>" data-role="<?php echo htmlspecialchars($user['role'], ENT_QUOTES); ?>">
+                                <button type="button" class="icon-btn icon-btn--edit js-edit-user" aria-label="Edit user" data-id="<?php echo (int) $user['id']; ?>" data-name="<?php echo htmlspecialchars($user['name'], ENT_QUOTES); ?>" data-email="<?php echo htmlspecialchars($user['email'], ENT_QUOTES); ?>" data-phone="<?php echo htmlspecialchars($user['phone'], ENT_QUOTES); ?>" data-role="<?php echo htmlspecialchars($user['role'], ENT_QUOTES); ?>">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M4 20H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                                         <path d="M15.5 4.5L19.5 8.5L10 18H6V14L15.5 4.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>

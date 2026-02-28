@@ -28,6 +28,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (userSubmitBtn) userSubmitBtn.textContent = "Add User";
     if (userIdInput) userIdInput.value = "";
     if (userForm) userForm.reset();
+    if (userPasswordInput) {
+      userPasswordInput.required = true;
+      userPasswordInput.placeholder = "Password";
+      userPasswordInput.value = "";
+    }
   };
 
   fab?.addEventListener("click", () => {
@@ -43,6 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const mask = toggleBtn.closest("td")?.querySelector(".password-mask");
       if (!mask) return;
       const secret = mask.dataset.password || "";
+      if (!secret) return;
       const isHidden = mask.textContent === "********";
       mask.textContent = isHidden ? secret : "********";
       return;
@@ -55,7 +61,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if (userIdInput) userIdInput.value = editBtn.dataset.id || "";
       if (userNameInput) userNameInput.value = editBtn.dataset.name || "";
       if (userEmailInput) userEmailInput.value = editBtn.dataset.email || "";
-      if (userPasswordInput) userPasswordInput.value = editBtn.dataset.password || "";
+      if (userPasswordInput) {
+        userPasswordInput.value = "";
+        userPasswordInput.required = false;
+        userPasswordInput.placeholder = "Leave blank to keep current password";
+      }
       if (userPhoneInput) userPhoneInput.value = editBtn.dataset.phone || "";
       if (userRoleInput) userRoleInput.value = editBtn.dataset.role || "User";
       openDialog(userModal);
