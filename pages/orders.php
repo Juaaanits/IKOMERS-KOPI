@@ -74,13 +74,14 @@ if ($dbReady) {
         )"
     );
 
-    $menuResult = $conn->query("SELECT id, name, price FROM menu_items ORDER BY name ASC");
+    $menuResult = $conn->query("SELECT id, name, price, image_path FROM menu_items ORDER BY name ASC");
     if ($menuResult) {
         while ($row = $menuResult->fetch_assoc()) {
             $menuCatalog[] = [
                 'id' => (int) $row['id'],
                 'name' => $row['name'],
-                'price' => (float) $row['price']
+                'price' => (float) $row['price'],
+                'imagePath' => $row['image_path'] ?? ''
             ];
         }
         $menuResult->free();
@@ -115,20 +116,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_order'])) {
         $totalValue = (float) $total;
 
         if ($orderId > 0) {
-            $update = $conn->prepare('UPDATE orders SET customer_name = ?, items = ?, total = ?, status = ? WHERE id = ?');
-            if ($update) {
-                $update->bind_param('ssdsi', $customerName, $items, $totalValue, $status, $orderId);
-                if ($update->execute()) {
-                    $orderResult = 'Order updated successfully.';
-                    $orderResultType = 'success';
+            $currentStatus = '';
+            $statusStmt = $conn->prepare('SELECT status FROM orders WHERE id = ? LIMIT 1');
+            if ($statusStmt) {
+                $statusStmt->bind_param('i', $orderId);
+                $statusStmt->execute();
+                $statusRes = $statusStmt->get_result();
+                if ($statusRes && ($statusRow = $statusRes->fetch_assoc())) {
+                    $currentStatus = (string) ($statusRow['status'] ?? '');
+                }
+                if ($statusRes) {
+                    $statusRes->free();
+                }
+                $statusStmt->close();
+            }
+
+            if ($currentStatus === 'Completed') {
+                $orderResult = 'Completed orders are locked and cannot be edited.';
+                $orderResultType = 'error';
+            } else {
+                $update = $conn->prepare('UPDATE orders SET customer_name = ?, items = ?, total = ?, status = ? WHERE id = ?');
+                if ($update) {
+                    $update->bind_param('ssdsi', $customerName, $items, $totalValue, $status, $orderId);
+                    if ($update->execute()) {
+                        $orderResult = 'Order updated successfully.';
+                        $orderResultType = 'success';
+                    } else {
+                        $orderResult = 'Failed to update order.';
+                        $orderResultType = 'error';
+                    }
+                    $update->close();
                 } else {
-                    $orderResult = 'Failed to update order.';
+                    $orderResult = 'Unable to update order right now.';
                     $orderResultType = 'error';
                 }
-                $update->close();
-            } else {
-                $orderResult = 'Unable to update order right now.';
-                $orderResultType = 'error';
             }
         } else {
             $insert = $conn->prepare('INSERT INTO orders (customer_name, items, total, status) VALUES (?, ?, ?, ?)');
@@ -342,8 +363,8 @@ if ($conn && $conn instanceof mysqli) {
                     <h2>Caf&eacute; Orders</h2>
                 </div>
                 <div class="filters">
-                    <input type="search" placeholder="Search orders..." aria-label="Search orders">
-                    <select aria-label="Filter orders by status">
+                    <input id="orders-search-input" type="search" placeholder="Search orders..." aria-label="Search orders">
+                    <select id="orders-status-filter" aria-label="Filter orders by status">
                         <option>All</option>
                         <option>Pending</option>
                         <option>Processing</option>
@@ -376,7 +397,7 @@ if ($conn && $conn instanceof mysqli) {
                             <?php
                             $statusClass = strtolower($order['status']);
                             ?>
-                            <tr>
+                            <tr data-status="<?php echo htmlspecialchars($order['status'], ENT_QUOTES); ?>">
                                 <td><?php echo htmlspecialchars($order['id']); ?></td>
                                 <td><?php echo htmlspecialchars($order['customer']); ?></td>
                                 <td><?php echo htmlspecialchars($order['items']); ?></td>
@@ -408,6 +429,7 @@ if ($conn && $conn instanceof mysqli) {
                                         data-items="<?php echo htmlspecialchars($order['items'], ENT_QUOTES); ?>"
                                         data-total="<?php echo htmlspecialchars(number_format((float)$order['total'], 2, '.', ''), ENT_QUOTES); ?>"
                                         data-status="<?php echo htmlspecialchars($order['status'], ENT_QUOTES); ?>"
+                                        <?php echo $order['status'] === 'Completed' ? 'disabled title="Completed orders cannot be edited"' : ''; ?>
                                         aria-label="Edit order"
                                         >
 

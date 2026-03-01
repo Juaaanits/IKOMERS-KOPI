@@ -24,6 +24,31 @@ if ($id <= 0 || !in_array($status, $allowedStatuses, true)) {
     exit;
 }
 
+$currentStatus = '';
+$check = $conn->prepare('SELECT status FROM orders WHERE id = ? LIMIT 1');
+if (!$check) {
+    http_response_code(500);
+    echo json_encode(['ok' => false, 'message' => 'Failed to prepare status check query']);
+    exit;
+}
+
+$check->bind_param('i', $id);
+$check->execute();
+$checkResult = $check->get_result();
+if ($checkResult && ($row = $checkResult->fetch_assoc())) {
+    $currentStatus = (string) ($row['status'] ?? '');
+}
+if ($checkResult) {
+    $checkResult->free();
+}
+$check->close();
+
+if ($currentStatus === 'Completed') {
+    http_response_code(409);
+    echo json_encode(['ok' => false, 'message' => 'Completed orders are locked and cannot be edited.']);
+    exit;
+}
+
 $stmt = $conn->prepare('UPDATE orders SET status = ? WHERE id = ?');
 if (!$stmt) {
     http_response_code(500);

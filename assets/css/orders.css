@@ -145,6 +145,13 @@
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
 }
 
+.icon-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
 .icon-btn--view { background: #7f8a96; }
 .icon-btn--edit { background: var(--orders-blue); }
 .icon-btn--delete { background: var(--orders-danger); }
@@ -817,6 +824,14 @@
     font-size: 0.68rem;
     font-weight: 700;
     letter-spacing: 0.08em;
+}
+
+.order-item-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+    display: block;
 }
 
 .order-item-meta {

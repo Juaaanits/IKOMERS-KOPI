@@ -8,6 +8,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const orderModalTitle = document.querySelector("#orderModal h3");
   const submitBtn = document.querySelector("#orderModal button[type='submit']");
 
+  const ordersSearchInput = document.getElementById("orders-search-input");
+  const ordersStatusFilter = document.getElementById("orders-status-filter");
+  const orderRows = Array.from(document.querySelectorAll(".orders-table tbody tr[data-status]"));
+
   const selectCustomerModal = document.getElementById("selectCustomerModal");
   const openSelectCustomer = document.getElementById("openSelectCustomer");
   const closeSelectCustomer = document.getElementById("closeSelectCustomer");
@@ -17,21 +21,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const selectCustomerRows = Array.from(document.querySelectorAll(".select-customer-row"));
   const orderCustomerNameInput = document.getElementById("order-customer-name");
   const orderCustomerIdInput = document.getElementById("order-customer-id");
+
   const orderItemsHiddenInput = document.querySelector(".order-items-hidden");
   const addOrderItemBtn = document.getElementById("addOrderItemBtn");
   const orderItemsTableBody = document.querySelector(".items-table tbody");
   const orderTotalInput = document.querySelector("#orderModal input[name='total']");
-  const menuCatalog = Array.isArray(window.menuItemCatalog) ? window.menuItemCatalog : [];
-  const menuCatalogMap = new Map(
-    menuCatalog.map((item) => [String(item.name || "").trim().toLowerCase(), item])
-  );
 
   const statusModal = document.getElementById("statusModal");
   const closeStatusModal = document.getElementById("closeStatusModal");
   const cancelStatusModal = document.getElementById("cancelStatusModal");
   const saveStatusModal = document.getElementById("saveStatusModal");
-  const statusOrderLabel = document.getElementById("statusOrderLabel");
   const statusSelect = document.getElementById("statusSelect");
+
   const viewOrderModal = document.getElementById("viewOrderModal");
   const closeViewOrderModal = document.getElementById("closeViewOrderModal");
   const cancelViewOrderModal = document.getElementById("cancelViewOrderModal");
@@ -42,8 +43,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const viewOrderSubtotal = document.getElementById("viewOrderSubtotal");
   const viewOrderTotal = document.getElementById("viewOrderTotal");
 
+  const menuCatalog = Array.isArray(window.menuItemCatalog) ? window.menuItemCatalog : [];
+  const menuCatalogMap = new Map(
+    menuCatalog.map((item) => [String(item.name || "").trim().toLowerCase(), item])
+  );
+
   const openDialog = (dlg) => dlg?.showModal();
   const closeDialog = (dlg) => dlg?.close();
+
   const parseJsonResponse = async (res) => {
     const raw = await res.text();
     try {
@@ -52,10 +59,17 @@ document.addEventListener("DOMContentLoaded", () => {
       throw new Error(raw.slice(0, 180) || "Invalid JSON response");
     }
   };
-  let selectedCustomerRow = null;
-  let activeStatusOrderId = 0;
 
-  const formatMoney = (value) => Number(value).toFixed(2);
+  const formatMoney = (value) => Number(value || 0).toFixed(2);
+
+  const getImageUrl = (rawPath) => {
+    const path = String(rawPath || "").trim();
+    if (!path) return "";
+    if (/^https?:\/\//i.test(path)) return path;
+    if (path.startsWith("../")) return path;
+    if (path.startsWith("assets/")) return `../${path}`;
+    return `../assets/uploads/menu/${path}`;
+  };
 
   const parseOrderItems = (itemsText) => {
     const raw = String(itemsText || "").trim();
@@ -67,22 +81,22 @@ document.addEventListener("DOMContentLoaded", () => {
       .filter(Boolean)
       .map((part) => {
         const normalized = part.replace(/\s+/g, " ").trim();
-        const match = normalized.match(
-          /^(\d+)\s*x\s*(.+?)\s*\((?:₱|\$|â‚±)?\s*([\d.]+)\)$/i
-        );
+        const match = normalized.match(/^(\d+)\s*x\s*(.+?)\s*\((?:[^0-9]*)?([\d.]+)\)$/i);
 
         if (!match) {
           const fallbackName = normalized.replace(/^\d+\s*x\s*/i, "").trim();
+          const mappedFallback = menuCatalogMap.get((fallbackName || normalized).toLowerCase());
           return {
             name: fallbackName || normalized,
             qty: 1,
             price: 0,
-            id: 0,
+            id: mappedFallback ? Number(mappedFallback.id || 0) : 0,
+            imagePath: mappedFallback ? String(mappedFallback.imagePath || "") : "",
           };
         }
 
         const qty = Math.max(1, Number.parseInt(match[1], 10) || 1);
-        const name = match[2].trim();
+        const name = String(match[2] || "").trim();
         const price = Math.max(0, Number.parseFloat(match[3]) || 0);
         const mapped = menuCatalogMap.get(name.toLowerCase());
 
@@ -91,8 +105,42 @@ document.addEventListener("DOMContentLoaded", () => {
           qty,
           price,
           id: mapped ? Number(mapped.id || 0) : 0,
+          imagePath: mapped ? String(mapped.imagePath || "") : "",
         };
       });
+  };
+
+  const applyOrderFilters = () => {
+    if (!orderRows.length) return;
+
+    const search = (ordersSearchInput?.value || "").trim().toLowerCase();
+    const selectedStatus = (ordersStatusFilter?.value || "All").trim().toLowerCase();
+
+    orderRows.forEach((row) => {
+      const rowStatus = (row.dataset.status || "").trim().toLowerCase();
+      const rowText = (row.textContent || "").toLowerCase();
+      const statusMatched = selectedStatus === "all" || rowStatus === selectedStatus;
+      const searchMatched = !search || rowText.includes(search);
+      row.style.display = statusMatched && searchMatched ? "" : "none";
+    });
+  };
+
+  const ensureEmptyStateRow = () => {
+    if (!orderItemsTableBody) return;
+
+    const hasDataRows = orderItemsTableBody.querySelectorAll(".order-item-edit-row").length > 0;
+    const emptyRow = orderItemsTableBody.querySelector(".items-empty-row");
+
+    if (!hasDataRows && !emptyRow) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = '<td colspan="6" class="items-empty-row"></td>';
+      orderItemsTableBody.appendChild(tr);
+      return;
+    }
+
+    if (hasDataRows && emptyRow) {
+      emptyRow.closest("tr")?.remove();
+    }
   };
 
   const clearOrderItemRows = () => {
@@ -101,27 +149,12 @@ document.addEventListener("DOMContentLoaded", () => {
     ensureEmptyStateRow();
   };
 
-  const ensureEmptyStateRow = () => {
-    if (!orderItemsTableBody) return;
-    const hasDataRows = orderItemsTableBody.querySelectorAll(".order-item-edit-row").length > 0;
-    const emptyRow = orderItemsTableBody.querySelector(".items-empty-row");
-    if (!hasDataRows && !emptyRow) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = '<td colspan="6" class="items-empty-row"></td>';
-      orderItemsTableBody.appendChild(tr);
-      return;
-    }
-    if (hasDataRows && emptyRow) {
-      emptyRow.closest("tr")?.remove();
-    }
-  };
-
   const buildItemsPayloadAndTotal = () => {
     if (!orderItemsTableBody) return;
+
     const rows = Array.from(orderItemsTableBody.querySelectorAll(".order-item-edit-row"));
     const tokens = [];
     let orderTotal = 0;
-    let hasPricedLine = false;
 
     rows.forEach((row) => {
       const itemInput = row.querySelector(".order-item-name-input");
@@ -134,19 +167,19 @@ document.addEventListener("DOMContentLoaded", () => {
       const price = Math.max(0, Number.parseFloat(priceInput?.value || "0") || 0);
       const lineTotal = qty * price;
       orderTotal += lineTotal;
-      if (lineTotal > 0) hasPricedLine = true;
 
       if (totalCell) totalCell.textContent = formatMoney(lineTotal);
       if (itemName) {
-        tokens.push(`${qty}x ${itemName} (₱${formatMoney(price)})`);
+        tokens.push(`${qty}x ${itemName} (PHP ${formatMoney(price)})`);
       }
     });
 
-    if (tokens.length > 0) {
-      if (orderTotalInput && hasPricedLine) orderTotalInput.value = formatMoney(orderTotal);
-      if (orderItemsHiddenInput) orderItemsHiddenInput.value = tokens.join(", ");
-    } else if (rows.length === 0 && orderItemsHiddenInput) {
-      orderItemsHiddenInput.value = "";
+    if (orderItemsHiddenInput) {
+      orderItemsHiddenInput.value = tokens.join(", ");
+    }
+
+    if (orderTotalInput) {
+      orderTotalInput.value = formatMoney(orderTotal);
     }
   };
 
@@ -154,6 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const nameInput = row.querySelector(".order-item-name-input");
     const idInput = row.querySelector(".order-item-id-input");
     const priceInput = row.querySelector(".order-item-price-input");
+
     const key = (nameInput?.value || "").trim().toLowerCase();
     const match = menuCatalogMap.get(key);
 
@@ -165,6 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const addItemRow = (seed = {}) => {
     if (!orderItemsTableBody) return;
+
     ensureEmptyStateRow();
 
     const tr = document.createElement("tr");
@@ -192,6 +227,7 @@ document.addEventListener("DOMContentLoaded", () => {
         buildItemsPayloadAndTotal();
       });
     });
+
     tr.querySelector(".row-remove-btn")?.addEventListener("click", () => {
       tr.remove();
       ensureEmptyStateRow();
@@ -205,13 +241,13 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   fab?.addEventListener("click", () => {
-    orderForm.reset();
-    orderIdInput.value = "";
+    orderForm?.reset();
+    if (orderIdInput) orderIdInput.value = "";
     if (orderCustomerIdInput) orderCustomerIdInput.value = "";
     clearOrderItemRows();
-    orderModalTitle.textContent = "Add New Order";
-    submitBtn.textContent = "Add Order";
-    orderModal.showModal();
+    if (orderModalTitle) orderModalTitle.textContent = "Add New Order";
+    if (submitBtn) submitBtn.textContent = "Add Order";
+    openDialog(orderModal);
   });
 
   closeOrderModal?.addEventListener("click", () => closeDialog(orderModal));
@@ -222,6 +258,8 @@ document.addEventListener("DOMContentLoaded", () => {
   cancelSelectCustomer?.addEventListener("click", () => closeDialog(selectCustomerModal));
 
   addOrderItemBtn?.addEventListener("click", () => addItemRow());
+
+  let selectedCustomerRow = null;
 
   selectCustomerRows.forEach((row) => {
     row.addEventListener("click", () => {
@@ -259,6 +297,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.querySelectorAll(".js-edit-order").forEach((btn) => {
     btn.addEventListener("click", () => {
+      if (btn.disabled || (btn.dataset.status || "").trim() === "Completed") {
+        window.showAppNotice?.("Completed orders are locked and cannot be edited.", "error");
+        return;
+      }
+
       clearOrderItemRows();
 
       const itemsText = btn.dataset.items || "";
@@ -267,46 +310,30 @@ document.addEventListener("DOMContentLoaded", () => {
         parsedItems.forEach((item) => addItemRow(item));
       }
 
-      orderIdInput.value = btn.dataset.orderId || "";
-      document.getElementById("order-customer-name").value = btn.dataset.customer || "";
-      orderForm.querySelector("textarea[name='items']").value = itemsText;
-      orderForm.querySelector("input[name='total']").value = btn.dataset.total || "";
-      orderForm.querySelector("select[name='status']").value = btn.dataset.status || "Pending";
+      if (orderIdInput) orderIdInput.value = btn.dataset.orderId || "";
+      const orderCustomerName = document.getElementById("order-customer-name");
+      if (orderCustomerName) orderCustomerName.value = btn.dataset.customer || "";
 
-      orderModalTitle.textContent = "Edit Order";
-      submitBtn.textContent = "Save Changes";
-      orderModal.showModal();
+      const hiddenItemsField = orderForm?.querySelector("textarea[name='items']");
+      if (hiddenItemsField) hiddenItemsField.value = itemsText;
+
+      const totalField = orderForm?.querySelector("input[name='total']");
+      if (totalField) totalField.value = btn.dataset.total || "";
+
+      const statusField = orderForm?.querySelector("select[name='status']");
+      if (statusField) statusField.value = btn.dataset.status || "Pending";
+
+      if (orderModalTitle) orderModalTitle.textContent = "Edit Order";
+      if (submitBtn) submitBtn.textContent = "Save Changes";
+      openDialog(orderModal);
     });
-  });
-
-  closeStatusModal?.addEventListener("click", () => closeDialog(statusModal));
-  cancelStatusModal?.addEventListener("click", () => closeDialog(statusModal));
-  saveStatusModal?.addEventListener("click", async () => {
-    if (!activeStatusOrderId || !statusSelect) return;
-
-    try {
-      const fd = new FormData();
-      fd.append("id", String(activeStatusOrderId));
-      fd.append("status", statusSelect.value);
-
-      const res = await fetch("orders_update.php", { method: "POST", body: fd });
-      const data = await parseJsonResponse(res);
-
-      if (!data.ok) {
-        window.showAppNotice?.(data.message || "Failed to update order", "error");
-        return;
-      }
-
-      window.location.reload();
-    } catch (error) {
-      window.showAppNotice?.(String(error.message || error), "error");
-    }
   });
 
   document.querySelectorAll(".js-delete-order").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const orderId = Number.parseInt(btn.dataset.orderId || "0", 10);
       if (!orderId) return;
+
       const confirmed = window.confirm("Delete this order permanently?");
       if (!confirmed) return;
 
@@ -338,32 +365,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (viewOrderTitle) viewOrderTitle.textContent = `Order #${id}`;
       if (viewOrderDate) viewOrderDate.textContent = date;
-      if (viewOrderTotal) viewOrderTotal.textContent = `₱${total}`;
+      if (viewOrderTotal) viewOrderTotal.textContent = `PHP ${total}`;
 
       if (viewOrderItems) {
         const itemRows = itemsRaw
           ? itemsRaw.split(",").map((item) => item.trim()).filter(Boolean)
           : [];
+
         let subtotal = 0;
 
         viewOrderItems.innerHTML = itemRows.length
           ? itemRows
               .map((item) => {
                 const normalized = item.replace(/\s+/g, " ").trim();
-                const match = normalized.match(/^(\d+)\s*x\s*(.+?)\s*\(([₱$])?([\d.]+)\)$/i);
+                const match = normalized.match(/^(\d+)\s*x\s*(.+?)\s*\((?:[^0-9]*)?([\d.]+)\)$/i);
 
                 const qty = match ? Number.parseInt(match[1], 10) : 1;
                 const name = match ? match[2] : normalized;
-                const price = match ? Number.parseFloat(match[4]) : Number.NaN;
+                const price = match ? Number.parseFloat(match[3]) : Number.NaN;
+                const mapped = menuCatalogMap.get(String(name || "").trim().toLowerCase());
+                const imageUrl = getImageUrl(mapped?.imagePath || "");
 
                 if (!Number.isNaN(price)) {
                   subtotal += qty * price;
                 }
 
-                const priceText = Number.isNaN(price) ? "-" : `₱${price.toFixed(2)}`;
+                const priceText = Number.isNaN(price) ? "-" : `PHP ${price.toFixed(2)}`;
                 return `
                 <li class="order-item-row">
-                  <div class="order-item-thumb" aria-hidden="true"><span>IMG</span></div>
+                  <div class="order-item-thumb" aria-hidden="true">
+                    ${imageUrl ? `<img src="${imageUrl}" alt="${name}">` : "<span>IMG</span>"}
+                  </div>
                   <div class="order-item-meta">
                     <p class="order-item-name">${name}</p>
                     <p class="order-item-sub">Quantity: ${qty} <span>&#9679;</span> ${priceText}</p>
@@ -374,7 +406,8 @@ document.addEventListener("DOMContentLoaded", () => {
           : '<li class="order-item-row"><div class="order-item-meta"><p class="order-item-name">No items listed.</p></div></li>';
 
         if (viewOrderSubtotal) {
-          viewOrderSubtotal.textContent = `₱${(itemRows.length ? subtotal : Number.parseFloat(total) || 0).toFixed(2)}`;
+          const subtotalValue = itemRows.length ? subtotal : Number.parseFloat(total) || 0;
+          viewOrderSubtotal.textContent = `PHP ${subtotalValue.toFixed(2)}`;
         }
       }
 
@@ -386,11 +419,33 @@ document.addEventListener("DOMContentLoaded", () => {
   cancelViewOrderModal?.addEventListener("click", () => closeDialog(viewOrderModal));
   printViewOrderBtn?.addEventListener("click", () => window.print());
 
-  // Keep backend-required items field non-empty when user submits from cloned UI.
-  document.querySelector("#orderModal form")?.addEventListener("submit", () => {
+  saveStatusModal?.addEventListener("click", async () => {
+    const activeStatusOrderId = Number.parseInt(document.getElementById("statusOrderLabel")?.dataset.orderId || "0", 10);
+    if (!activeStatusOrderId || !statusSelect) return;
+
+    try {
+      const fd = new FormData();
+      fd.append("id", String(activeStatusOrderId));
+      fd.append("status", statusSelect.value);
+      const res = await fetch("orders_update.php", { method: "POST", body: fd });
+      const data = await parseJsonResponse(res);
+      if (!data.ok) {
+        window.showAppNotice?.(data.message || "Failed to update order", "error");
+        return;
+      }
+      window.location.reload();
+    } catch (error) {
+      window.showAppNotice?.(String(error.message || error), "error");
+    }
+  });
+
+  closeStatusModal?.addEventListener("click", () => closeDialog(statusModal));
+  cancelStatusModal?.addEventListener("click", () => closeDialog(statusModal));
+
+  orderForm?.addEventListener("submit", () => {
     buildItemsPayloadAndTotal();
     if (orderItemsHiddenInput && !orderItemsHiddenInput.value.trim()) {
-      orderItemsHiddenInput.value = "1x Custom Order (₱0.01)";
+      orderItemsHiddenInput.value = "1x Custom Order (PHP 0.01)";
     }
     if (orderTotalInput) {
       const parsedTotal = Number.parseFloat(orderTotalInput.value || "0");
@@ -400,7 +455,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Order status donut
+  ordersSearchInput?.addEventListener("input", applyOrderFilters);
+  ordersStatusFilter?.addEventListener("change", applyOrderFilters);
+  applyOrderFilters();
+
   const statusCtx = document.getElementById("orderStatusChart");
   const legend = document.getElementById("orderStatusLegend");
   const statusData = window.ordersStatusData || {
@@ -409,7 +467,7 @@ document.addEventListener("DOMContentLoaded", () => {
     colors: ["#6b35d9", "#17b7b2", "#f16521", "#c23dc4"],
   };
 
-  if (statusCtx && Chart) {
+  if (statusCtx && window.Chart) {
     new Chart(statusCtx, {
       type: "doughnut",
       data: {
