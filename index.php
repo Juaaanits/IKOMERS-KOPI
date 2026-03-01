@@ -1,4 +1,4 @@
 <?php
-// Redirect root requests to the styled home page.
-header('Location: pages/home.php');
-exit;
+// Admin portal only: route root directly to admin login.
+header('Location: pages/admin-login.php');
+exit();

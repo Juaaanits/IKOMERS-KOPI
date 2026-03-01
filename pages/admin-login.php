@@ -2,6 +2,12 @@
 session_start();
 require_once '../includes/db.php';
 
+// If already authenticated as admin, skip login page and go straight to dashboard.
+if (!empty($_SESSION['user_id']) && !empty($_SESSION['is_admin'])) {
+    header('Location: dashboard.php');
+    exit();
+}
+
 $loginResult = '';
 $usernameValue = '';
 
