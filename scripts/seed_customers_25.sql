@@ -1,0 +1,28 @@
+USE ikomers_db;
+
+INSERT INTO customers (name, email, phone, address, orders_count) VALUES
+('Marcus Johnson', 'marcus.johnson01@mail.com', '09170000001', '463 Commonwealth Ave, Boston, MA', 3),
+('William O''Connor', 'william.oconnor02@mail.com', '09170000002', '567 Desert Palm Dr, Las Vegas, NV', 5),
+('Maria Sanchez', 'maria.sanchez03@mail.com', '09170000003', '3201 River Road, Austin, TX', 2),
+('David Kim', 'david.kim04@mail.com', '09170000004', '1245 Peachtree St, Atlanta, GA', 4),
+('Amanda Peterson', 'amanda.peterson05@mail.com', '09170000005', '88 Lakeshore Blvd, Chicago, IL', 1),
+('Rachel Foster', 'rachel.foster06@mail.com', '09170000006', '711 Pine St, Seattle, WA', 0),
+('James Kim', 'james.kim07@mail.com', '09170000007', '92 8th Ave, New York, NY', 6),
+('Lisa Rodriguez', 'lisa.rodriguez08@mail.com', '09170000008', '410 Sunset Blvd, Los Angeles, CA', 2),
+('Michael Bennett', 'michael.bennett09@mail.com', '09170000009', '515 Market St, San Francisco, CA', 3),
+('Sarah Collins', 'sarah.collins10@mail.com', '09170000010', '77 Ocean View Rd, Miami, FL', 1),
+('Kevin Brooks', 'kevin.brooks11@mail.com', '09170000011', '215 Elm Street, Denver, CO', 4),
+('Olivia Martin', 'olivia.martin12@mail.com', '09170000012', '340 Oak Ave, Portland, OR', 2),
+('Noah Wilson', 'noah.wilson13@mail.com', '09170000013', '12 Cedar Ct, Phoenix, AZ', 0),
+('Emma Taylor', 'emma.taylor14@mail.com', '09170000014', '601 Grand Ave, Dallas, TX', 3),
+('Liam Thomas', 'liam.thomas15@mail.com', '09170000015', '421 Maple Lane, Columbus, OH', 5),
+('Sophia Anderson', 'sophia.anderson16@mail.com', '09170000016', '210 Harbor St, San Diego, CA', 1),
+('Ethan Moore', 'ethan.moore17@mail.com', '09170000017', '98 Hillcrest Rd, Nashville, TN', 2),
+('Mia Jackson', 'mia.jackson18@mail.com', '09170000018', '730 King St, Orlando, FL', 0),
+('Logan White', 'logan.white19@mail.com', '09170000019', '16 Ridgeway Dr, Charlotte, NC', 4),
+('Ava Harris', 'ava.harris20@mail.com', '09170000020', '285 Willow Rd, Sacramento, CA', 1),
+('Benjamin Clark', 'benjamin.clark21@mail.com', '09170000021', '14 Bridge St, Detroit, MI', 2),
+('Isabella Lewis', 'isabella.lewis22@mail.com', '09170000022', '509 Park Ave, Minneapolis, MN', 3),
+('Mason Young', 'mason.young23@mail.com', '09170000023', '68 Bay St, Tampa, FL', 0),
+('Charlotte Hall', 'charlotte.hall24@mail.com', '09170000024', '333 Main St, Kansas City, MO', 2),
+('Lucas Allen', 'lucas.allen25@mail.com', '09170000025', '740 Station Rd, Raleigh, NC', 1);
