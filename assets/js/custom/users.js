@@ -45,12 +45,8 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("click", (event) => {
     const toggleBtn = event.target.closest(".js-toggle-user-password");
     if (toggleBtn) {
-      const mask = toggleBtn.closest("td")?.querySelector(".password-mask");
-      if (!mask) return;
-      const secret = mask.dataset.password || "";
-      if (!secret) return;
-      const isHidden = mask.textContent === "********";
-      mask.textContent = isHidden ? secret : "********";
+      // Passwords are hashed in DB and cannot be revealed safely.
+      window.showAppNotice?.("Password is stored securely and cannot be shown.", "info");
       return;
     }
 
@@ -64,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (userPasswordInput) {
         userPasswordInput.value = "";
         userPasswordInput.required = false;
-        userPasswordInput.placeholder = "Leave blank to keep current password";
+        userPasswordInput.placeholder = "Leave blank to keep password";
       }
       if (userPhoneInput) userPhoneInput.value = editBtn.dataset.phone || "";
       if (userRoleInput) userRoleInput.value = editBtn.dataset.role || "User";

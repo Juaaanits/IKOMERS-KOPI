@@ -201,7 +201,13 @@ if ($conn && $conn instanceof mysqli) {
                             <td><?php echo htmlspecialchars($user['name']); ?></td>
                             <td><?php echo htmlspecialchars($user['email']); ?></td>
                             <td>
-                                <span class="password-mask">********</span>
+                                <span class="password-mask" data-state="hidden">********</span>
+                                <button type="button" class="icon-btn icon-btn--view js-toggle-user-password" aria-label="Toggle password visibility">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M3 12C3 12 6.5 6 12 6C17.5 6 21 12 21 12C21 12 17.5 18 12 18C6.5 18 3 12 3 12Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/>
+                                    </svg>
+                                </button>
                             </td>
                             <td><?php echo htmlspecialchars($user['phone']); ?></td>
                             <td><?php echo htmlspecialchars($user['role']); ?></td>

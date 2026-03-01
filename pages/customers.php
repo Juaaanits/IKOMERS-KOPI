@@ -12,11 +12,11 @@ $stats = [
     'customersPerDay' => 0.0
 ];
 $spendingDistribution = [
-    '₱0-₱20' => 0,
-    '₱20-₱50' => 0,
-    '₱50-₱100' => 0,
-    'No Spending' => 0,
-    'Over ₱100' => 0
+    'bucket_0_20' => 0,
+    'bucket_20_50' => 0,
+    'bucket_50_100' => 0,
+    'bucket_no_spending' => 0,
+    'bucket_over_100' => 0
 ];
 $perPage = 3;
 $currentPage = isset($_GET['page']) ? (int) $_GET['page'] : 1;
@@ -110,28 +110,36 @@ if ($dbReady) {
         }
     }
 
-    $spendingQuery = $conn->query("
-        SELECT orders_count, COUNT(*) AS total
-        FROM customers
-        GROUP BY orders_count
-    ");
-    if ($spendingQuery) {
-        while ($bucketRow = $spendingQuery->fetch_assoc()) {
-            $ordersCount = (int) $bucketRow['orders_count'];
-            $bucketTotal = (int) $bucketRow['total'];
-            if ($ordersCount === 0) {
-                $spendingDistribution['No Spending'] += $bucketTotal;
-            } elseif ($ordersCount <= 5) {
-                $spendingDistribution['₱0-₱20'] += $bucketTotal;
-            } elseif ($ordersCount <= 12) {
-                $spendingDistribution['₱20-₱50'] += $bucketTotal;
-            } elseif ($ordersCount <= 20) {
-                $spendingDistribution['₱50-₱100'] += $bucketTotal;
-            } else {
-                $spendingDistribution['Over ₱100'] += $bucketTotal;
+    if ($hasOrdersTable) {
+        // Build spending buckets from actual customer spend (SUM of order totals per customer).
+        $spendingQuery = $conn->query("
+            SELECT
+                c.id,
+                COALESCE(SUM(o.total), 0) AS customer_spend
+            FROM customers c
+            LEFT JOIN orders o ON o.customer_name = c.name
+            GROUP BY c.id
+        ");
+        if ($spendingQuery) {
+            while ($bucketRow = $spendingQuery->fetch_assoc()) {
+                $customerSpend = (float) ($bucketRow['customer_spend'] ?? 0);
+                if ($customerSpend <= 0) {
+                    $spendingDistribution['bucket_no_spending']++;
+                } elseif ($customerSpend <= 20) {
+                    $spendingDistribution['bucket_0_20']++;
+                } elseif ($customerSpend <= 50) {
+                    $spendingDistribution['bucket_20_50']++;
+                } elseif ($customerSpend <= 100) {
+                    $spendingDistribution['bucket_50_100']++;
+                } else {
+                    $spendingDistribution['bucket_over_100']++;
+                }
             }
+            $spendingQuery->free();
         }
-        $spendingQuery->free();
+    } else {
+        // If orders table does not exist yet, all customers are considered no-spending.
+        $spendingDistribution['bucket_no_spending'] = $totalCustomers;
     }
 
     $totalPages = max(1, (int) ceil($totalCustomers / $perPage));
@@ -520,11 +528,11 @@ if ($conn && $conn instanceof mysqli) {
 window.customerSpendingData = {
     labels: ['₱0-₱20', '₱20-₱50', '₱50-₱100', 'No Spending', 'Over ₱100'],
     counts: [
-        <?php echo (int) $spendingDistribution['₱0-₱20']; ?>,
-        <?php echo (int) $spendingDistribution['₱20-₱50']; ?>,
-        <?php echo (int) $spendingDistribution['₱50-₱100']; ?>,
-        <?php echo (int) $spendingDistribution['No Spending']; ?>,
-        <?php echo (int) $spendingDistribution['Over ₱100']; ?>
+        <?php echo (int) $spendingDistribution['bucket_0_20']; ?>,
+        <?php echo (int) $spendingDistribution['bucket_20_50']; ?>,
+        <?php echo (int) $spendingDistribution['bucket_50_100']; ?>,
+        <?php echo (int) $spendingDistribution['bucket_no_spending']; ?>,
+        <?php echo (int) $spendingDistribution['bucket_over_100']; ?>
     ],
     colors: ['#6b35d9', '#e23c7e', '#f0b22f', '#2b90e0', '#28a56b']
 };
@@ -535,4 +543,3 @@ window.customerSpendingData = {
 <script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 </html>
-
