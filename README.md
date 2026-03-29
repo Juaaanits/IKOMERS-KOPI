@@ -48,8 +48,6 @@ BrewBean uses a practical and scalable stack to support performance, maintainabi
 ![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
 ![VS Code](https://img.shields.io/badge/VS_Code-0078D4?style=for-the-badge&logo=visual-studio-code&logoColor=white)
 
----
-
 ## 🚀 Key Features & CRUD Functionalities
 
 BrewBean implements complete **CRUD (Create, Read, Update, Delete)** workflows across core admin modules.
@@ -184,26 +182,30 @@ BrewBean/
 
 ## 🚀 Future Enhancements (DevOps + Full-Stack Growth)
 
-1. **CI/CD Pipeline (GitHub Actions)**
-   - Automate lint checks, PHP syntax checks, test runs, and deploy workflows.
-2. **Environment Management**
-   - Add `.env`-based config for `dev`, `staging`, and `production`.
-3. **Production Deployment**
-   - Deploy using Nginx reverse proxy with HTTPS (Let's Encrypt).
-4. **Container Security Hardening**
-   - Run non-root containers, image vulnerability scanning, and dependency audits.
-5. **Observability Stack**
-   - Add monitoring/logging with Prometheus + Grafana + Loki.
-6. **Database Migration Versioning**
-   - Introduce migration tooling for consistent schema evolution.
-7. **Backup Automation**
-   - Scheduled database backups with restore validation.
-8. **Role-Based Expansion**
+1. **Laravel Migration Path**
+   - Refactor the current PHP codebase into Laravel for cleaner MVC architecture, routing, validation, authentication, and storage handling.
+2. **Database Modernization**
+   - Replace runtime schema updates with Laravel migrations and seeders, while keeping MariaDB/MySQL in the short term and evaluating PostgreSQL for long-term production use.
+3. **Frontend Framework Adoption**
+   - Introduce Blade + Alpine.js for lightweight interactivity, with Livewire as an option for reactive CRUD screens and React/Vue only if the system grows into a full SPA.
+4. **Environment Management**
+   - Add `.env`-based configuration for `dev`, `staging`, and `production`.
+5. **Production Deployment**
+   - Move toward cloud-ready deployment with managed database hosting, object storage for uploads, HTTPS, and improved session/auth handling.
+6. **CI/CD Pipeline**
+   - Automate lint checks, PHP syntax checks, test runs, and deploy workflows using GitHub Actions.
+7. **Container Security Hardening**
+   - Run non-root containers, perform image vulnerability scanning, and add dependency audits.
+8. **Observability Stack**
+   - Add monitoring and logging with Prometheus, Grafana, and Loki.
+9. **Backup Automation**
+   - Schedule database backups with restore validation.
+10. **Role-Based Expansion**
    - Add `Manager` and `Staff` roles with scoped permissions.
-9. **REST API Layer**
-   - Expose endpoints for future mobile client integration.
-10. **Quality Engineering**
-   - Add automated integration/UI tests for critical CRUD flows.
+11. **REST API Layer**
+   - Expose endpoints for future mobile, customer-facing, or third-party integrations.
+12. **Quality Engineering**
+   - Add automated integration and UI tests for critical CRUD flows.
 
 ---
 
